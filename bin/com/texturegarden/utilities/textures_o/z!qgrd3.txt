@@ -1,0 +1,14 @@
+Setup 
+SetSeed 5 
+Process2D Or Random 134154239 AddCyclic IBell 65537 X 4 IBell 65535 Y 3 
+DoAnimation 60 
+Animate 
+ReactionDiffusion1 Buffer0 1498 12701 2 258 11 12 
+Return 
+Palette 
+MakeColourMapRGB NoInvert X NoInvert Subtract 31996 X 65537 
+Return 
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation C 

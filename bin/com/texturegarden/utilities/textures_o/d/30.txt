@@ -1,0 +1,21 @@
+Setup
+
+Animate 
+SetSeed 22
+Clear2D
+BandwidthLimitedFrequencyNoise2D 65536 14 15
+InverseFFT2D 
+Mix2D
+Equalise2D 
+Return
+
+Palette
+MakeColourMapRGB Sawtooth 65535 X 2 32000 Sawtooth 65535 X 1
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation Sin 65535 C 1
+

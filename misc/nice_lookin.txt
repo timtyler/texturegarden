@@ -1,0 +1,24 @@
+Setup 
+NewBuffer1D BufferHeight 
+NewBuffer1D BufferWidth 
+Animate 
+SetSeed 21718 
+Clear2D 
+FrequencyFractalNoise2D 65768 2 
+InverseFFT2D 
+Equalise2D 
+Process2D AddCyclic AddCyclic AddCyclic C Sawtooth1 65987 Y 1 IBell 62695 X 1 Time 
+Blur2D 
+Blur2D 
+Return 
+Palette 
+MakeColourMapHSB X 63181 Invert Sawtooth3 11974 X Buffer1 
+Return 
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation Bell 63168 C 2 
+Settings 
+SetOffsets 512 0 
+SetHeightMap True 
+Return 

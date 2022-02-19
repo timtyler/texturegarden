@@ -1,0 +1,27 @@
+Setup 
+SetSeed 23 
+Clear2D 
+BandwidthLimitedFrequencyNoise2D 65000 1 3 
+InverseFFT2D 
+Equalise2D 
+Process2D AddCyclic AddCyclic C X Y 
+NewBuffer1D BufferHeight 
+NewBuffer1D BufferWidth 
+NewBuffer2D BufferWidth BufferHeight 
+Animate 
+SetSeed 21 
+RetreiveBuffer2D Buffer1 
+Process1D Sin 16000 AddCyclic X Time 2 
+SmearH Index1DQuick Y AddCyclic C E 
+SwapBuffer1D Buffer1 
+Process1D Sin 16000 AddCyclic X Time 1 
+SmearV Index1DQuick X AddCyclic C E 
+SwapBuffer1D Buffer1 
+Return 
+Palette 
+MakeColourMapRGB IBell 65535 X 1 65535 Sawtooth2 65534 X 3 
+Return 
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation Sin 65500 C 3 

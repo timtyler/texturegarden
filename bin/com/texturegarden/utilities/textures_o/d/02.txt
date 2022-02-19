@@ -1,0 +1,20 @@
+Setup
+SetSeed 11
+Process2DQuick Mask Random 0xFFFFFFFF 0x40008000
+DoAnimation 96
+
+Animate
+ReactionDiffusion1 Buffer0 635 17180 217 75 15 12
+Return
+
+Palette
+MakeColourMapRGB Invert X Invert X X
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation C
+
+Sawtooth 65535 C 1

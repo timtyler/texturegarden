@@ -1,0 +1,16 @@
+Setup 
+Animate 
+SetSeed 22 
+Clear2D 
+FrequencyFractalNoise2D 65536 0 
+InverseFFT2D 
+Equalise2D 
+Process2D AddCyclic AddCyclic AddCyclic C Bell 65535 Y 1 Sin 65535 X 1 Time 
+Return 
+Palette 
+MakeColourMapHSB Sawtooth 65535 X 1 Invert Sin 4999 X 1 Invert Bell 5000 X 1 
+Return 
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation Sawtooth 65535 C 5 

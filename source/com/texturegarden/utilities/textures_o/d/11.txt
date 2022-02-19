@@ -1,0 +1,24 @@
+Setup
+SetSeed 11
+Clear2D
+FrequencyFractalNoise2D 65535 1
+InverseFFT2D 
+Equalise2D 
+NewBuffer2D BufferWidth BufferHeight
+
+Animate 
+RetreiveBuffer2D Buffer1
+MergeNBuffersShifted2D 4 Buffer1 Time 11111 Buffer1 22222 Time Buffer1 SubtractCyclic 65535 Time 33333 Buffer1 44444 SubtractCyclic 65535 Time CombinationAdd
+Equalise2D
+Return
+
+Palette
+MakeColourMapRGB X Subtract 65535 X 32000
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation Sawtooth 65535 C 1
+

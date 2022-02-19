@@ -1,0 +1,245 @@
+<html>
+<head>
+<title>a lightweight XML parser for CLDC/KVM1.0</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body bgcolor="#FFFFFF">
+<table width="650" border="0" cellspacing="0" cellpadding="4">
+  <tr> 
+    <td width="16" height="41">&nbsp;</td>
+    <td width="344" height="41" valign="top"><font size="3"><b>Porting TinyXML 
+      onto the CLDC/KVM1.0 for PalmOS</b></font></td>
+    <td width="16" height="41">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="16" height="37">&nbsp;</td>
+    <td width="344" height="37"><b>the problem<br>
+      </b> 
+      <hr width="100" align="left" noshade>
+      <b> </b></td>
+    <td width="16" height="37">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="16" height="144">&nbsp;</td>
+    <td width="344" height="144" valign="top"> 
+      <p>Parsing an XML document on a palm pilot, was an essential issue of my 
+        thesis about multichannel e-banking at a <a href="http://www.customercare.ch">software 
+        company in switzerland</a>. The problem I had was parsing some XML data, 
+        that I received from the InputStream of a socket and storing this data 
+        in a kind of local cache before parsing. I had to get this XML data from 
+        various servlets of a web banking application on a webserver. My application 
+        should work online with all data, or just local only with the data stored 
+        in the local cache a few online sessions before. So i needed a non-validating 
+        parser that parses a String object containing the XML data.</p>
+    </td>
+    <td width="16" height="144">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="16">&nbsp;</td>
+    <td width="344"><b>finding a parser that would fit my problem<br>
+      </b> 
+      <hr width="100" noshade align="left">
+      <b> </b></td>
+    <td width="16">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="16" height="315">&nbsp;</td>
+    <td width="344" height="315" valign="top"> 
+      <p>To solve my problem, I had to find a parser, that was small enough and 
+        of which the source code can be changed easily in order to make it run 
+        on the CLDC/KVM1.0. I knew of a parser called AElfred from <a href="http://www.opentext.com/services/content_management_services/xml_sgml_solutions.html#aelfred_and_sax">Microstar</a> 
+        and its <a href="http://fujisawa.org/palm/">portation</a> onto the KVM 
+        EA 0.2. The &quot;bad&quot; thing about this software portation was, that 
+        it did not run on CLDC/KVM1.0 anymore because of the new generic Connection 
+        framework having been introduced by this new version of the CLDC. The 
+        sources of the parser itself were not wholly available, and the class 
+        file of the parser itself was crypted. So there was no chance to change 
+        the disassembled code anyway. </p>
+      <p>I then had a look at a lot of other parsers, and checked whether they 
+        would run some way on the <i>CLDC/KVM1.0</i>. They were either to big 
+        (~about 80 classes) or their code was so complex, that I was not able 
+        to port it to<i> KVM</i> in a reasonable period of time. I also tried 
+        a parser called <i>NanoXML</i>. The distribution contained just a few 
+        classes (I think there were only 2 essential classes), but unfortunately 
+        the parser was too slow on KVM. The parser took about one and a half minute 
+        to parse a XML data set with 8 tags and 4 attributes each. The API wasn't 
+        that simple I wanted to have it. One day I found a link on <a href="http://www.xmlsoftware.com">www.xmlsoftware.com</a> 
+        (definitely a good resource site for XML stuff) referencing a free, small 
+        parser called <i><a href="http://www.gibaradunn.srac.org/tiny/index.shtml">TinyXML</a></i> 
+        by <a href="mailto:tom@srac.org">Tom Gibara</a>.</p>
+    </td>
+    <td width="16" height="315">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="16">&nbsp;</td>
+    <td width="344"><b>TinyXML a non-validating parser</b> <br>
+      <hr width="100" align="left" noshade>
+    </td>
+    <td width="16">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="16" height="789">&nbsp;</td>
+    <td width="344" valign="top" height="789"> 
+      <p>The distribution only had four essential classes and therefore was lightweight 
+        enough to run on a palm pilot. The other classes supported creating a 
+        tree (not DOM), representing the parsed XML data (that was not what I 
+        wanted, so I left this feature out). The API is very easy to understand 
+        and reminds one to the <i>SAX</i> API. </p>
+      <p>You have to implement a class by extending the so called <i><b>XMLResponder</b></i>. 
+        The <i><b>XMLResponder</b></i> itself is something like the <i><b>DocumentHandler</b></i> 
+        in <i><b>SAX</b></i> based distributions and serves as a kind of an event 
+        listener. The <i><b>XMLResponder</b></i> has a method that has to be implemented 
+        in order to return an InputStream, from which the parser later reads the 
+        XML data. As I mentioned above, I needed a parser, that parses just a 
+        String object containing the XML data. So I implemented a <i><b>XMLInputStream</b></i> 
+        which simply has a byte array, representing the bytes of a String object 
+        (the XML data itself). Consequently the <i><b>XMLInputStream</b></i> simulates 
+        the reading from an <i><b>InputStream</b></i>, by returning byte per byte 
+        of the underlying byte array. The first step was done: I've been able 
+        to parse a String containing the XML data (NOTE: I still was on <i><b>JSE1.2</b></i> 
+        !).</p>
+      <p>The next step was to implement two methods, that are not available in 
+        <i>CLDC/KVM 1.0</i>. So I implemented those methods in a utility class 
+        &quot;CharacterUtility&quot; and replaced the method calls in the code 
+        of TinyXML with the corresponding calls of the methods of my utility class. 
+        These methods were the following two static methods on sun's Character 
+        class: </p>
+      <p> 
+      <ul>
+        <li>&nbsp;&nbsp;&nbsp;public static boolean Character.isLetter(char theChar) 
+        <li>&nbsp;&nbsp;&nbsp;public static boolean Character.isLetterOrDigit(char 
+          theChar) 
+      </ul>
+      <P>The 1st method checks, whether the given character is a letter. The 2nd 
+        checks, whether the character is a letter or a digit. So I implemented 
+        a utitlity class &quot;CharacterUtility&quot; having these two static 
+        methods. Different to sun's implementation, I did not care about the encoding 
+        of the present character, because there is only ASCII encoding on palm 
+        available anyway (correct my here, if I'm wrong). See the source of the 
+        <a href="./tinyxml.zip">palm distribution of TinyXML</a> for details. 
+      <P>Further I deleted some methods of the XMLParser class, because I did 
+        not need the original provided feature of parsing DTDs. Please see the 
+        <a href="http://www.gibaradunn.srac.org/tiny/index.shtml">original TinyXML 
+        distribution</a> for details. Some changes also affected the XMLReader, 
+        which checked the encoding of the underlying InputStream. As I mentioned 
+        above, I did not need to check the encoding of the bytes. In order to 
+        remove the encoding checks, I had to change the implementation of the 
+        read() method of the XMLReader in a way, that the method only reads the 
+        next byte of the underlying InputStream without paying attention to the 
+        encoding of the character stream. 
+      <P> 
+        To get a more SAX-like API, I renamed the <b><i>XMLResponder</i></b> 
+        into <b><i>DocumentHandler</i></b> and implemented a <b><i>HandlerBase</i></b> 
+        in order not to have to implement all methods each time i write a new 
+        handler. I removed the method of the XMLResponder, which returned the 
+        <b><i>InputStream</i></b> to the parser and implemented a public method 
+        <b><i>setInputStream(InputStream aXMLInputStream)</i></b> on the <b><i>XMLParser</i></b> 
+        class in order to set the <b> <i>XMLInputStream</i></b> there and not 
+        in the handler. The method setDocumentHandler(DocumentHandler) sets the 
+        corresponding handler of the current instance of the parser. To get an 
+        even more SAX-like API, I renamed the methods of the DocumentHandler.</p>
+    </td>
+    <td width="16" height="789">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="16">&nbsp;</td>
+    <td width="344"><b>How to write your own DocumentHandler<br>
+      </b> 
+      <hr width="100" noshade align="left">
+      <b> </b></td>
+    <td width="16">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="16" height="517">&nbsp;</td>
+    <td width="344" valign="top" height="517"> 
+      <p>First, you have to implement a new subclass of <i><b>HandlerBase</b></i>, 
+        let's call it <b><i>myHandler</i></b>. Think about, which events you want 
+        to listen for and implement the corresponding method in order to react 
+        on the event. See the methods' implementation on how to react on events.</p>
+      <p> Following the implementation of a custom handler <b>myHandler</b>:</p>
+      <p> 
+      <pre><B>
+	public class myHandler extends HandlerBase {   
+
+   	   public vodd docEnd() {
+   	      System.out.println("**** END OF DOCUMENT ****");
+	   }
+
+	   public vodd docStart() {
+	      System.out.println("**** START OF DOCUMENT ****\n");
+	   }
+
+	   public voed elementStart(String name, Hashtable attr) throws ParseException {
+	      System.out.println("Element: " + name);
+	      if (attr != null) {
+	         Enumeration e = attr.keys();
+	         while (e.hasMoreElements()) {
+	            Object k = e.nextElement();
+		    System.out.println(k + " = " + attr.get(k));
+	         }
+	         System.out.println("");
+	      }
+	   }
+       }
+</B></pre>
+    </td>
+    <td width="16" height="517">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="16">&nbsp;</td>
+    <td width="344"><b>How to get the parser to work<br>
+      </b> 
+      <hr width="100" align="left" noshade>
+      <b> </b></td>
+    <td width="16">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="16" height="277">&nbsp;</td>
+    <td width="344" valign="top" height="277"> 
+      <p>See the following sample on how to get the <i><b>XMLParser</b></i> to 
+        work with the handler you've just implemented :</p>
+      <p> 
+      <pre>
+         // create a new XMLInputStream with the given test data
+         <b>XMLInputStream aStream = new XMLInputStream(&quot;&lt;?xml the XML data ?&gt;&quot;);</b>
+         // create the parser
+         <b>XMLParser aParser = new XMLParser();</b>
+         // set your handler in order to receive events from the parser
+         <b>aParser.setDocumentHandler(myHandler);</b>
+         // set the source to parse from
+         <b>aParser.setInputStream(aStream);</b>
+	<b>try {</b>
+           // and do the parsing
+           <b>aParser.parseXML(); 
+        } catch (ParseException e){}</b>
+</pre>
+      <p> 
+      <p></p>
+    </td>
+    <td width="16" height="277">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="16" height="36">&nbsp;</td>
+    <td width="344" valign="top" height="36"><b>TinyXML for palm<br>
+      </b>
+      <hr width="100" align="left" noshade>
+      <b> </b></td>
+    <td width="16" height="36">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="16" height="126">&nbsp;</td>
+    <td width="344" valign="top" height="126"> 
+      <p>You can download the distribution of TinyXML for Palm <a href="./tinyxml.zip">here</a>. 
+        Two batch files are included in order to compile and preverify the classes 
+        and to make the sample application or the corresponding PalmDB for the 
+        palm. Simply change the environment variables on top of the batch files 
+        to adapt them to your systems' configuration.</p>
+      <p>Have fun, regards <br>
+        <a href="mailto:sauerc@gmx.de">Christian Sauer</a></p>
+    </td>
+    <td width="16" height="126">&nbsp;</td>
+  </tr>
+</table>
+</body>
+</html>

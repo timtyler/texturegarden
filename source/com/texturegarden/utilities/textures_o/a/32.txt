@@ -1,0 +1,37 @@
+Setup 
+SetSeed 23 
+Clear2D 
+BandwidthLimitedFrequencyNoise2D 65000 0 5 
+InverseFFT2D 
+Equalise2D 
+Process2D AddCyclic AddCyclic C X Y 
+NewBuffer1D BufferHeight 
+NewBuffer1D BufferWidth 
+NewBuffer2D BufferWidth BufferHeight 
+
+Animate 
+SetSeed 21 
+RiseUpBuffer2D Buffer1 Speed 
+MergeNBuffersShifted2D 2 Buffer1 AddCyclic Time 0 17111 Buffer1 SubtractCyclic 54784 Time 31334 CombinationAdd 
+Process2DQuick Bound C 
+Process1D Multiply Sin 65534 AddCyclic X Time 1 3999 
+WavesVQuick
+SwapBuffer1D Buffer1 
+Process1D Multiply Sin 65537 AddCyclic X Time 1 4001 
+WavesHQuick
+SwapBuffer1D Buffer1 
+Process1D Multiply Sin 65534 AddCyclic X Time 0 4001 
+WavesVQuick 
+SwapBuffer1D Buffer1 
+Process1D Multiply Sin 65535 AddCyclic X Time 1 4001 
+WavesHQuick 
+SwapBuffer1D Buffer1 
+Return 
+
+Palette 
+MakeColourMapRGB Sawtooth 65535 X 1 65534 Sawtooth 65536 X 4 
+Return 
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation Sin 65500 C 2 

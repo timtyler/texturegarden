@@ -1,0 +1,21 @@
+Setup
+
+Animate 
+SetSeed 22
+Clear2D
+FrequencyFractalNoise2D 65535 1
+InverseFFT2D 
+Equalise2D 
+Process2D SubtractCyclic SubtractCyclic AddCyclic C Sin 65535 X 1 Sin 65535 Y 1 Time
+
+Return
+
+Palette
+MakeColourMapHSB Invert Bell 45535 X 1 Bell 44535 X 1 62222 
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation Sin 65535 C 2

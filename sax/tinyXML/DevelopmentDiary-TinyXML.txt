@@ -1,0 +1,271 @@
+Title:        TinyXML Development Diary
+Maintainer:   Tom Gibara (tom@srac.org)
+Last updated: 4th January 1999
+
+
+
+Contents
+--------
+
+  * Development Aim (NOV99)
+  * Development Evaluation (JAN00)
+  * Development Evaluation (DEC99)
+  * Bugs Existing
+  * Conformance Shortfalls
+  * Immediate Schedule
+  * Development History
+
+
+
+Development Aim (as of Sunday 21st November 1999)
+---------------
+
+Simple XML files are good way for programs, especially small ones, to
+store and retrieve information. TinyXML seeks to provide a set of
+classes which can be used to provide an easy way of accessing
+information stored within XML files. The priorities for this
+development are:
+
+  * Small code footprint (pref <10k uncompressed)
+  * Simple to use (everything simply encapsulated)
+  * Easy integration (all code in one tidy package) 
+  * Accessible Code (released under GPL)
+  * Support for oldest JVMs possible (pref. 1.0)
+
+The intended user base for this package includes:
+
+  * Highly configurable applets
+  * Simple Text Markup Applications
+  * Applications which need to share data in a standard format
+
+The intention is NOT to produce a validating XML parser, at least not
+one which validates from a <!DOCTYPE> definition - unless the
+validator can 'plug-in' since the inclusion of code to parse this tag
+would swell the package size considerably. When an XML Schema becomes
+standardized it may be included then. Possibly, the TinyXML parser may
+provide an interface which allows the DOCTYPE definition to be parsed
+by a separate package, which then validates the parse tree.
+
+The intention IS to make TinyXML as conformant as possible given the
+priorities listed above. For such a small piece of code it's already
+pretty good although the current parsing architecture is not very
+flexible.
+
+
+
+Development Evaluation (as of January 4th January 2000)
+----------------------
+
+TinyXML has grown significantly prior to it's new release. This is
+because I am not willing to sacrifice conformance for size or
+speed. It is my opinion that standards only remain useful by being
+strongly supported and I do not intend to weaken the standard by
+producing a semi-standards-compliant XML parser.
+
+Additionally, when TinyXML fully supports the XML 1.0 standard, it
+will be a better package for developers, with behavior which can be
+relied upon.
+
+Thus while some of the original development aims have been
+comprimised, they have only been comprimised for the best possible
+reason - to improve robustness and usability.
+
+
+
+Development Evaluation (as of Tuesday 7th December 1999)
+----------------------
+
+TinyXML has now been under development for just over three weeks -
+this translates to approximately 5 or 6 evenings/late-nights of
+programming, testing and documenting. It has become clear during this
+period of development that certain 'development aims' that I set down
+a few weeks ago need to be comprimised if the parser is to become
+useful and compliant.
+
+Firstly, support for Java 1.0 is difficult due to
+the lack of support for character readers and it has been abandoned
+for the foreseeable future. However, since I developed my own
+character reading/decoding class, this option may again be open. If
+you require support for 1.0 JVMs please let me know and I might make
+the adaptions.
+
+Secondly, the code size to which I restricted my initial design has
+required adjustment (due to the implementation of my own character
+decoder). My design emphasis is now to provide two lightweight & direct
+interfaces to the TinyXML parser - one event driven and the other
+tree-constructing. This allows the smallest (event driven)
+implementation to still reside within one package (only ~12k).
+
+Finally, regarding the usefulness of TinyXML, it is clear that two
+standard interfaces are currently widely used - SAX and DOM. Thus, for
+application developers who may wish to use this parser, I intend to
+layer both of these interfaces onto the TinyXML parser - providing
+a total of four interfaces.
+
+To make this software more useful within applications (which may well
+be creating, storing and serving XML documents) I intend to add a DTD
+parser and validator (probably available only to the DOM interface).
+
+It is my hope that this highly layered implementation will provide a
+sensible codebase for XML applet-servlet communication since it allows
+both server-side and browser-side to communicate using the same core
+classes.
+
+
+
+Bugs Existing (as of Tuesday 30th December 1999)
+-------------
+
+  * doesn't trap circular nested entities
+  * XMLReader doesn't handle large, nested entities efficiently
+
+
+
+Conformance Shortfalls (as of Tuesday 30th December 1999)
+----------------------
+
+TinyXML does not yet conform to REC-xml-19980210 - although It is now
+very close. The remaining non-conformance issues are (AFAIK) very
+minor. TinyXML:
+
+  * permits extra attributes in the <?xml?> tag
+  * doesn't allow combining-characters or extenders in names
+  * character decoder doesn't support Unicode beyond 2 octets ie.
+      UTF-8 parsing doesn't recognise 4 byte encodings
+      UTF-16 parsing doesn't recognise surrogate pairs
+  * doesn't check the standalone xml attribute
+  * doesn't check for illegal attribute types in <!ATTLIST >
+
+
+
+Immediate Schedule (as of Tuesday 4th January)
+------------------
+
+  * improve (enrich) ParsedXML interface
+  * substitute error codes for error messages
+  * implement UCS character decoding (be&le)
+  * read wide unicode characters
+  * Implement SAX 1.0 interfaces
+  * Implement the DOM 2.0 specification
+  * author a validator (prob. on top of DOM2)
+
+
+
+Development History
+-------------------
+
+ Week Commencing: Sunday 14th November 1999
+
+  * Started TinyXML project.
+  * Implemented very very basic XML parsing.
+  * Assigned parser version 0.1
+  * Authored basic code to access the parse tree.
+  * Added code to handle CDATA and <!-- tags.
+  * Wrote little test application and test file.
+  * Corrected lots of bugs.
+  * Added routine to skip DOCTYPE tag
+  * Added parsing for <?PI?> and <empty/> tags
+  * Added positional checks for <?xml?> and <!DOCTYPE> tags
+  * Dispatched another swathe of bugs.
+  * Added extra error messages.
+  * Added basic support for references.
+  * Replaced test app with a simple GUI front-end 
+  * Authored readme.txt
+  * Restructured development directories
+  * Added a wad of structural code to hide TinyXML implementation
+  * Adapted TestXML app to use new classes and interfaces
+  * Wrote TinyXMLTest to demonstrate direct use of TinyXML
+  * Added initial set of JavaDoc comments
+  * Corrected visibility error
+  * Assigned version number 0.2
+  * Applied GPL to source files
+  * Finished applying first set of javadoc comments
+  * Made tag name and tag attribute parsing compliant with XML1.0
+  * Corrected parsing error (some tag openers eaten wontonly)
+  * Broke <!-- and <![CDATA[ parsing to improve other tag parsing 
+  * Mended comments and CDATA
+  * Added parsing of PI's and comments outside tags
+    but this has made checking for the end-of-stream very messy
+  * Increased version number to 0.3
+
+
+Week Commencing: Sunday 21st November 1999
+
+  * Made customizations to Emacs for further development
+  * Added better support for character references
+  * Abandoned Java 1.0 support
+  * Performed a complete rewrite to remove a host of nasty fixes
+    but this has temporarily removed parsing of <! > tags
+  * Increased version number to 0.3
+  * Reimplemented <! > tag parsing
+  * Adjusted tag constants (removed REFERENCE added DTD)
+  * Folded parsing behind a cleaner interface
+  * Renamed TinyXML class to XMLParser
+  * Removed Adaptor classes
+  * Again updated apps to use the new interface
+  * Updated version to 0.4
+  * Corrected little bug which ate first character after tag
+  * Put out first public release
+
+  
+Week Commencing: Sunday 5th December 1999
+
+  * Wrote XMLResponder interface in preparation for implementing
+    both SAX and DOM.
+  * Removed static parse methods from XMLParser (to enable reuse)
+  * Split constructive part of XMLParser into new TinyResponder
+  * Authored a small TinyParser class to wrap up TinyResponder
+  * Packaged tiny classes into gd.xml.tiny (there are now two
+    ways of using Tiny, implement XMLResponder ~8k, or get a
+    parse tree back ~14k)
+  * Made UTF-8 the default encoding
+  * Increased version to 0.5
+  * Started producing XMLReader
+  * Abandoned first XMLReader (weakness in InputStreamReader)
+  * Fixed one/two bugs concerning bad DOCTYPE CDATA placement
+  * Added parsing of <?xml?> tag
+  * Created second XMLReader
+  * Implemented UTF-8 and UTF-16 support (big & little endian)
+  * Added routine to guess correct encoding
+  * Allowed encoding to change with encoding attribute in <?xml?>
+  * Added newline conversion (may be wrong - spec seems ambiguous)
+  * nearing full (non-validating) conformance:
+     - using responder (~11k)
+     - with parse tree constructor (~17k)
+
+
+Week Commencing: Sunday 26th December 1999
+
+  * Corrected bug in reference parsing
+  * Made minor changes to accomodate conformant entity parsing
+  * made internal general entity parsing completely conformant
+  * implemented parsing of entity definitions in internal DTD
+  * implemented expansion of character and parameter refs in DTD
+  * increased version number to 0.6
+  * made updates to XMLResponder interface to accomodate DTD
+  * added parsing of <!ATTLIST> and <!NOTATION>
+  * added parsing of <!ELEMENT> tag
+  * provided response method for DOCTYPE definition
+  * rewrote TinyXMLTest as a demonstration of an XMLResponder
+  * improved parsing of <?xml?> tag
+  * made modifications to internal DTD parsing routines
+  * wrote external DTD parsing routines
+  * provided proper resolution of external entities
+  * wrote simple function to parse external entities
+  * added correct PE parsing in external DTD
+  * ensured internal DTD skipped on failed external reference
+  * added facility to parse just DTD with TinyXMLTest
+  * cleared many bugs in XMLParser
+  * dispatched minor bugs in TinyXMLTest
+  * disabled standalone parse (not currently used)
+  * version increased to 0.7
+     - using responder (~17k)
+     - with parse tree constructor (~23k)
+
+
+Week Commencing: Sunday 2nd January 2000
+
+   * updated documentation for gd.xml package
+   * corrected minor site error
+   * updated release notes
+   * Put out second public release

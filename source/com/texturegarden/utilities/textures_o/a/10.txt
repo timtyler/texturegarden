@@ -1,0 +1,26 @@
+Settings
+SetHeightMap False
+Return
+
+Setup
+SetSeed 11
+Clear2D
+FrequencyFractalNoise2D 800 0
+InverseFFT2D 
+Equalise2D 
+NewBuffer2D BufferWidth BufferHeight
+
+Animate 
+MergeNBuffersShifted2D 3 Buffer1 AddCyclic 24684 Time 11111 Buffer1 32222 Time Buffer1 SubtractCyclic 42000 Time 53333 CombinationAdd
+Equalise2D 
+Return
+
+GetColour
+ReturnColour C
+
+Palette
+MakeColourMapRGB SubtractCyclic 65535 X SubtractCyclic 65535 X 65535
+Return
+
+GetElevation 
+ReturnElevation Sin 65535 C 1

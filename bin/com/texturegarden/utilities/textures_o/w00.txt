@@ -1,0 +1,17 @@
+Setup
+SetSeed 5
+Process2D Or Random 0x03FF03FF Or Square 65535 Y 1 ShiftLeft Square 65535 X 1 16
+
+Animate
+WaterAnimationBuffer Buffer0
+Return
+
+Palette
+MakeColourMapRGB X X X
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation C 

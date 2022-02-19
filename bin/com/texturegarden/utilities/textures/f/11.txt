@@ -1,0 +1,25 @@
+Setup
+SetSeed 5
+Clear2D 
+Particle 12000 14000 0 0 1500 1600 32768 16
+Particle 14000 12000 0 0 1600 1600 32768 16
+Particle 40536  5000 0 0 20000 20000 32768 0
+Particle 40536 40536 0 0 20000 20000 32768 0
+Particle  5000 40536 0 0 20000 20000 32768 0
+Particle 0 0 0 0 300 65535 32768 1
+Particle 0 0 0 0 65535 300 32768 1
+DoAnimation 16
+
+Animate
+WaterAnimationBuffer Buffer0 0
+Return
+
+Palette
+MakeColourMapRGB X X X
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation C 

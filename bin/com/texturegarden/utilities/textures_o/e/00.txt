@@ -1,0 +1,18 @@
+Setup
+SetSeed 22
+Process2D Mask Mask Random 65535 32768 Square 65535 X 0
+
+Animate 
+Voronoi 0
+Return
+
+Palette
+MakeColourMapRGB X X X
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation Sin 65500 C 4
+

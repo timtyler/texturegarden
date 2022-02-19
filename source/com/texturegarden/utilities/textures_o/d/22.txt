@@ -1,0 +1,21 @@
+Setup
+
+Animate 
+SetSeed 22
+Clear2D
+BandwidthLimitedFrequencyNoise2D 65536 1 5
+InverseFFT2D 
+Equalise2D 
+Process2D AddCyclic AddCyclic C X Y
+Return
+
+Palette
+MakeColourMapRGB Sawtooth 65535 X 2 Sin 60535 X 2 55555 
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation Sin 65535 C 3
+

@@ -1,0 +1,19 @@
+Setup
+SetSeed 5
+Process2D Or Mask Random 0xFFFF0FFF Mask Square 65535 X 2 Square 65535 Y 2 ShiftLeft Or Square 65535 X 1 Square 65535 Y 1 16
+
+DoAnimation 320
+
+Animate
+Rug2DVN 0x100
+Return
+
+Palette
+MakeColourMapRGB X Subtract 32000 X 65535
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation C

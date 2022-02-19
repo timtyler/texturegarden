@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jardesc>
+    <jar path="C:/Documents/Java/texturegarden/tg.jar"/>
+    <options overwrite="false" compress="true" exportErrors="true"
+        exportWarnings="true" saveDescription="true"
+        descriptionLocation="/TextureGarden/tg.jardesc"
+        useSourceFolders="false" buildIfNeeded="true"/>
+    <manifest manifestVersion="1.0" usesManifest="true"
+        reuseManifest="false" saveManifest="true"
+        generateManifest="false" manifestLocation="/TextureGarden/JAX/MANIFEST.MF">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="false">
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.fourier"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.effects.ca"/>
+        <file path="/TextureGarden/Done.txt"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.arrays"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.settings"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.gui.canvas"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.image"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.instructions"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.maps.height"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.program"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.effects.ca.waves"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.messages"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.maps.colour"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.gui"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.effects"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.utilities"/>
+        <javaElement handleIdentifier="=TextureGarden/source&lt;com.texturegarden.effects.particle"/>
+    </selectedElements>
+</jardesc>

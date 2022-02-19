@@ -1,0 +1,17 @@
+Setup
+SetSeed 5
+FractalLandscape
+
+Animate
+WaterAnimationBuffer Buffer0
+Return
+
+Palette
+MakeColourMapRGB X X X
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation C 

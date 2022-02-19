@@ -1,0 +1,24 @@
+Setup
+NewBuffer1D BufferHeight
+NewBuffer1D BufferWidth
+
+Animate 
+SetSeed 22
+Clear2D
+FrequencyFractalNoise2D 65535 0
+InverseFFT2D 
+Equalise2D 
+Process2D AddCyclic AddCyclic AddCyclic C Bell 65535 Y 1 Sin 65535 X 1 Time
+Blur2D
+Blur2D
+Return
+
+Palette
+MakeColourMapHSB X 65535 Invert Bell 12000 X Buffer1
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation Sin 65535 C 1

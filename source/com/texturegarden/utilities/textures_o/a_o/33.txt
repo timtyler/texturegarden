@@ -1,0 +1,19 @@
+Setup 
+SetSeed 22 
+Clear2D 
+BandwidthLimitedFrequencyNoise2D 65535 4 5 
+InverseFFT2D 
+Equalise2D 
+Process2D AddCyclic AddCyclic C X Y 
+NewBuffer2D BufferWidth BufferHeight 
+Animate 
+RiseUpBuffer2D Buffer1 Speed 
+Process2D IndexBuffer2D Buffer1 AddCyclic X Multiply Sin 65535 AddCyclic Y Time 2 12001 AddCyclic Y Multiply Bell 65534 AddCyclic X Time 2 12000 
+Return 
+Palette 
+MakeColourMapRGB 65535 Sawtooth 65535 X 2 Bell 65536 X 0 
+Return 
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation Sin 65535 C 3 

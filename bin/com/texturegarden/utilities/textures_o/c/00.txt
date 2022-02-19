@@ -1,0 +1,18 @@
+Setup
+SetSeed 5
+Process2D Or Random 0x07FF07FF Or Sin 65535 X 2 Sin 65535 Y 2
+DoAnimation 60
+
+Animate
+ReactionDiffusion1 Buffer0 1500 12700 0 256 12 12
+Return
+
+Palette
+MakeColourMapRGB Invert Subtract 65535 X 65535 Sawtooth 65535 X 3 
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation Bell 65535 C 4

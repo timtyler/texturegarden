@@ -1,0 +1,253 @@
+<pre class="sourcecode"><code>
+<font color="#003399"><i>/**
+ *
+ * &lt;p&gt;Title: MyJavaTools: XML Interface&lt;/p&gt;
+ * &lt;p&gt;Description: Defines a contract for storing Xml data.&lt;/p&gt;
+ * &lt;p&gt;Copyright: This is public domain;
+ * The right of people to use, distribute, copy or improve the contents of the
+ * following may not be restricted.&lt;/p&gt;
+ *
+ * @author Vlad Patryshev
+ * @see http://www.myjavatools.com/projects/PracticalXML/
+ *
+ * &lt;p&gt;Xml defines methods that it is natural to have for a structure that is retrieved from or stored to XML files.
+ * It has a type, a value, a map of attributes and a set of kids (nodes) grouped by their types.
+ * Inside a type, kids are arranged as a collection, so that they do have some order.
+ * Kids are also Xml.
+ *
+ * &lt;p&gt;Note that the hierarchy is unidirectional: kids have no knowledge of contaners they are members of.
+ * This sounds natural when we talk about containers; files do not know about their current location,
+ * web pages do not generally know their full url - but somehow in DOM it is all different (and this is what makes it hard to handle: parent references).
+ */</i></font>
+
+<b>package</b> com.myjavatools.xml;
+
+<b>import</b> java.io.*;
+<b>import</b> java.lang.reflect.Constructor;
+<b>import</b> java.lang.reflect.InvocationTargetException;
+<b>import</b> java.util.ArrayList;
+<b>import</b> java.util.HashMap;
+<b>import</b> java.util.Iterator;
+<b>import</b> java.util.Map;
+<b>import</b> java.util.Collection;
+
+<b>import</b> org.xml.sax.AttributeList;
+
+<b>public</b> <b>interface</b> XmlData
+{
+  <font color="#003399"><i>/**
+   * Sets the contents from another XmlData.
+   *
+   * @param org original XmlData
+   */</i></font>
+  <b>public</b> <b>void</b> setXmlContent(XmlData org);
+
+  <font color="#003399"><i>/**
+   * Gets the contents of this XmlData (probably, itself).
+   *
+   * @return itself
+   */</i></font>
+  <b>public</b> XmlData getXmlContent();
+
+  <font color="#003399"><i>/**
+   * Clones XmlData, same thing as deepCopy.
+   *
+   * @return deep copy of itself
+   */</i></font>
+  <b>public</b> Object clone();
+
+  <b>public</b> <b>void</b> setAttribute(String name, String value);
+
+  <font color="#003399"><i>/**
+   * Sets attributes from an array of name-value pairs.
+   * The preexisting attributes are not removed by this operation.
+   *
+   * @param attributes a String array consisting of name-value pairs.
+   */</i></font>
+  <b>public</b> <b>void</b> setAttributes(String[] attributes);
+
+  <font color="#003399"><i>/**
+   * Sets attributes from an AttributeList.
+   *
+   * @param attributes AttributeList
+   */</i></font>
+  <b>public</b> <b>void</b> setAttributes(AttributeList attributes);
+
+  <font color="#003399"><i>/**
+   * Gets a Map of attributes.
+   * The preexisting attributes are not removed by this operation.
+   *
+   * @return a Map that maps attribute names to attribute values, all Strings
+   */</i></font>
+
+  <font color="#003399"><i>/**
+   * Sets attributes from a Map, name -&gt; value.
+   * The preexisting attributes are not removed by this operation.
+   *
+   * @param attributes a Map, attributeName -&gt; attributeValue.
+   */</i></font>
+  <b>public</b> <b>void</b> setAttributes(Map attributes);
+
+  <b>public</b> Map getAttributes();
+
+  <font color="#003399"><i>/**
+   * Gets XmlData type, which is just a String.
+   *
+   * @return the type string
+   */</i></font>
+  <b>public</b> String getType();
+
+  <font color="#003399"><i>/**
+   * Gets a value of XmlData, which is just a String.
+   *
+   * @return the value
+   */</i></font>
+  <b>public</b> String getValue();
+
+  <font color="#003399"><i>/**
+   * Sets the value of XmlData.
+   *
+   * @param v new value for XmlData
+   *
+   * @return itself
+   */</i></font>
+  <b>public</b> XmlData setValue(String v);
+
+  <font color="#003399"><i>/**
+   * Gets the value of a specified attribute.
+   *
+   * @param name attribute name
+   * @return attribute value
+   */</i></font>
+  <b>public</b> String getAttribute(String name);
+
+  <font color="#003399"><i>/**
+   * Gets the value of a specified attribute; if there is none, returns default value.
+   *
+   * @param name attribute name
+   * @param defaultValue
+   * @return attribute value or defaultValue
+   */</i></font>
+  <b>public</b> String getAttribute(String name, String defaultValue);
+
+  <font color="#003399"><i>/**
+   * Gets the name of XmlData, which is the value of attribute &quot;name&quot;.
+   *
+   * @return the name string
+   */</i></font>
+  <b>public</b> String getName();
+
+  <font color="#003399"><i>/**
+   * Gets the id of XmlData, which is the value of attribute &quot;id&quot;.
+   *
+   * @return the id string
+   */</i></font>
+  <b>public</b> String getId();
+
+  <font color="#003399"><i>/**
+   * Gets a collection of all kids of XmlData. Normally you would not need it;
+   * retrieving kids by type is what one normally does, but you never know...
+   *
+   * @return a Collection of XmlData that contains all kids
+   */</i></font>
+  <b>public</b> Collection getAllKids();
+
+  <font color="#003399"><i>/**
+   * Gets a Collection of kids of specified type.
+   *
+   * @param type type of the kids to choose
+   * @return all kids that have specified type
+   */</i></font>
+  <b>public</b> Collection getKids(String type);
+
+  <font color="#003399"><i>/**
+   * Gets the number of kids of specified type.
+   *
+   * @param type
+   * @return the number of such kids
+   */</i></font>
+  <b>public</b> <b>int</b> getKidCount(String type);
+
+  <font color="#003399"><i>/**
+   * Gets a kid of specified type, if any.
+   *
+   * @param type type of the kid to chose
+   * @return any kid that has this type or null if there is no such kid
+   */</i></font>
+  <b>public</b> XmlData getKid(String type);
+
+  <font color="#003399"><i>/**
+   * Gets the value of a kid of specified type, if any.
+   *
+   * @param type
+   * @return the value of a kid of specified type or null if there's none
+   */</i></font>
+  <b>public</b> String getKidValue(String type);
+
+  <font color="#003399"><i>/**
+   * Gets a kid of specified type that has an attribute with a specified value.
+   *
+   * @param type type of the kid to choose
+   * @param attribute attribute name
+   * @param value attribute value
+   * @return such a kid, if found, or null otherwise
+   */</i></font>
+  <b>public</b> XmlData getKid(String type, String attribute, String value);
+
+  <font color="#003399"><i>/**
+   * Gets a kid having specified type and specified id.
+   *
+   * @param type kid type
+   * @param id kid id
+   * @return a kid of specified type that has the value named &quot;id&quot; equal to id
+   */</i></font>
+  <b>public</b> XmlData getKid(String type, String id);
+
+  <font color="#003399"><i>/**
+   * Adds a kid to the set of kids.
+   *
+   * @param kid kid to add
+   * @return the kid
+   */</i></font>
+  <b>public</b> XmlData addKid(XmlData kid);
+
+  <font color="#003399"><i>/**
+   * Removes a kid from the set of kids.
+   *
+   * @param kid kid to remove
+   */</i></font>
+  <b>public</b> <b>void</b> removeKid(XmlData kid);
+
+  <font color="#003399"><i>/**
+   * Adds all XmlData elements from given Collection to the set of kids,
+   * skipping elements that are not XmlData.
+   *
+   * @param kids
+   */</i></font>
+  <b>public</b> <b>void</b> addKids(Collection kids);
+  <font color="#003399"><i>/**
+   * Removes all kids of given type.
+   *
+   * @param type type of kids to remove
+   * @return Collection of removed kids
+   */</i></font>
+  <b>public</b> Collection removeKids(String type);
+
+  <font color="#003399"><i>/**
+   * &lt;p&gt;XmlData.Condition has just one method that checks whether XmlData satisfies
+   * a condition. Best used in search or selection in XmlData.&lt;/p&gt;
+   */</i></font>
+  <b>public</b> <b>interface</b> Condition {
+
+    <font color="#003399"><i>/**
+     * Checks whether XmlData satisfies a condition.
+     *
+     * @param data the data to check
+     * @return true if yes, it satisfies
+     */</i></font>
+    <b>public</b> <b>boolean</b> satisfies(XmlData data);
+  }
+
+  <b>public</b> XmlData selectTree(Condition condition);
+}
+</code></pre>

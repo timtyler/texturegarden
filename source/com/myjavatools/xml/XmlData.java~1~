@@ -1,0 +1,510 @@
+/**
+ * Title:        XML Data<p>
+ * Description:  Extended Hashmap that stores Xml-like data<p>
+ * Copyright:    Copyright (c) 2003, Vlad Patryshev<p>
+ * @author       vpatryshev
+ * @version 1.0
+ */
+
+package com.myjavatools.xml;
+
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import org.xml.sax.AttributeList;
+
+public class XmlData
+{
+  public final static Class XmlDataClass = (new XmlData()).getClass();
+  String type = null;
+  String value = null;
+  HashMap attr = new HashMap();
+  HashMap byType = new HashMap();
+
+  public XmlData() {}
+
+  public XmlData(String type) {
+    this();
+    this.type = type;
+  }
+
+  public XmlData(String type, String value) {
+    this(type);
+    this.value = value;
+  }
+
+  public XmlData(String type, String value, ArrayList kids) {
+    this(type, value);
+    sortOut(kids);
+  }
+
+  public XmlData(String type, String value, XmlData[] kids) {
+    this(type, value);
+    ArrayList tmp = new ArrayList();
+    for (int i = 0; i < kids.length; i++) {
+      addKid(kids[i]);
+    }
+  }
+
+  public XmlData(String type, String value, String[] attrs) {
+    this(type, value);
+    setAttributes(attrs);
+  }
+
+  public XmlData(String type, String value, String[] attrs, ArrayList kids) {
+    this(type, value, kids);
+    setAttributes(attrs);
+  }
+
+  public XmlData(String type, String value, String[] attrs, XmlData []kids) {
+    this(type, value, kids);
+    setAttributes(attrs);
+  }
+
+  public XmlData(String type, String value, AttributeList attrs) {
+    this(type, value);
+    setAttributes(attrs);
+  }
+
+  public XmlData(String type, String value, AttributeList attrs, ArrayList kids) {
+    this(type, value, kids);
+    setAttributes(attrs);
+  }
+
+  public XmlData(String type, String value, AttributeList attrs, XmlData []kids) {
+    this(type, value, kids);
+    setAttributes(attrs);
+  }
+
+  public XmlData(String type, String value, HashMap attrs, ArrayList kids) {
+    this(type, value, kids);
+    this.attr = attrs;
+  }
+
+  public XmlData(String type, String value, HashMap attrs, HashMap byType) {
+    this(type, value);
+    this.attr = attrs;
+    this.byType = byType;
+  }
+
+  public XmlData(XmlData org) {
+    this(org.type, org.value, org.attr, org.byType);
+  }
+
+  public XmlData(InputStream in)
+    throws java.io.IOException,
+           java.lang.InstantiationException {
+    this((new XmlReader(in)).read());
+  }
+
+  public XmlData(File in)
+    throws java.io.IOException,
+           java.lang.InstantiationException {
+    this((new XmlReader(in)).read());
+  }
+
+  private static InputStream getInputStream(java.net.URL url)
+    throws java.io.IOException,
+           java.lang.InstantiationException {
+    InputStream input = null;
+    java.net.URLConnection conn = url.openConnection();
+    conn.connect();
+    Object content = conn.getContent();
+
+/*
+    if (!conn.getContentType().endsWith("xml")) {
+      throw new java.lang.InstantiationException("Url " + url +
+                                          " does not provide xml data; it is " +
+                                          conn.getContentType());
+    }
+ */
+
+//    if (content != null &&
+//        content instanceof sun.net.www.MeteredStream) {
+//      input = (sun.net.www.MeteredStream)content;
+//    }
+    input = url.openStream();
+
+    if (input == null) {
+      throw new java.lang.InstantiationException("Url " + url +
+                                                 " does not provide data.");
+    }
+
+    return input;
+  }
+
+  public XmlData(java.net.URL url)
+    throws java.io.IOException,
+           java.lang.InstantiationException {
+    this(getInputStream(url));
+  }
+
+  public void setXmlContent(XmlData org) {
+    type = org.type;
+    value = org.value;
+    attr = org.attr;
+    byType = org.byType;
+  }
+
+  public XmlData getXmlContent() {
+    return this;
+  }
+
+// This method sorts out the different types of kids into appropriate type entries
+  private void sortOut(ArrayList kids) {
+    for (int i = 0; i < kids.size(); i++) {
+      addKid((XmlData)(kids.get(i)));
+    }
+    trim();
+  }
+
+  public void save(String filename)
+    throws java.io.IOException {
+    XmlWriter.write(filename, this);
+  }
+
+  public void save(File file)
+    throws java.io.IOException {
+    XmlWriter.write(file, this);
+  }
+
+  public void save(OutputStream os)
+    throws java.io.IOException {
+    XmlWriter.write(os, this);
+  }
+
+  public void setAttribute(String name, String value) {
+    attr.put(name, value);
+  }
+
+  public void setAttributes(String[] attrs) {
+//                   The ratio will override the default 0.75 for hashmaps
+    attr = new HashMap(attrs.length * 7 / 5);
+
+    for (int i = 0; i < attrs.length; i+=2) {
+      setAttribute(attrs[i], attrs[i+1]);
+    }
+  }
+
+  public void setAttributes(AttributeList attrs) {
+//                   The ratio will override the default 0.75 for hashmaps
+    attr = new HashMap(attrs.getLength() * 7 / 5);
+
+    for (int i = 0; i < attrs.getLength(); i++) {
+      setAttribute(attrs.getName(i), attrs.getValue(i));
+    }
+  }
+
+  public HashMap getAttributes() {
+    return attr;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public XmlData setValue(String v) {
+    value = v == null ? v : new String(v);
+    return this;
+  }
+
+  public String getValue() {
+    return value;
+  }
+
+  public String getAttribute(String name) {
+    return (String)attr.get(name);
+  }
+
+  public String getAttribute(String name, String defaultValue) {
+    String result = (String)attr.get(name);
+    return (result == null) ? defaultValue : result;
+  }
+
+  public String getName() {
+    return getAttribute("name");
+  }
+
+  public String getId() {
+    return getAttribute("id");
+  }
+
+  public ArrayList getAllKids() {
+    ArrayList kids = new ArrayList();
+
+    for (Iterator list = byType.entrySet().iterator();
+                  list.hasNext();) {
+      kids.addAll((ArrayList)((Map.Entry)list.next()).getValue());
+    }
+
+    return kids;
+  }
+
+  public ArrayList getKids(String type) {
+    return (ArrayList)byType.get(type);
+  }
+
+  public int getKidCount(String type) {
+    ArrayList kids = getKids(type);
+    return (kids == null) ? 0 : kids.size();
+  }
+
+  public XmlData getKid(String type) {
+    ArrayList kids = getKids(type);
+
+    if (kids == null) return null;
+
+    return (kids.size() > 0) ? ((XmlData)kids.get(0)) : null;
+  }
+
+  public String getKidValue(String type) {
+    XmlData kid = getKid(type);
+    return (kid == null) ? null : kid.getValue();
+  }
+
+  public XmlData getKid(String type, int i) {
+    ArrayList kids = getKids(type);
+
+    if (kids == null) return null;
+
+    return (XmlData)kids.get(i);
+  }
+
+  public XmlData getKid(String type, String attribute, String value) {
+    ArrayList kids = getKids(type);
+
+    if (kids == null) return null;
+
+    for (int i = 0; i < kids.size(); i++) {
+      XmlData kid = (XmlData)kids.get(i);
+      String attr = kid.getAttribute(attribute);
+      if (attr != null && attr.equals(value)) return kid;
+    }
+    return null;
+  }
+
+  public XmlData getKid(String type, String id) {
+    return getKid(type, "id", id);
+  }
+
+  public XmlData addKid(XmlData kid) {
+    if (kid == null) return kid;
+
+    String type = kid.getType();
+    ArrayList slot = getKids(type);
+
+    if (slot == null)
+      byType.put(type, (slot = new ArrayList()));
+
+    slot.add(kid);
+    return kid;
+  }
+
+  public void removeKid(XmlData kid) {
+    String type = kid.getType();
+    ArrayList slot = getKids(type);
+    if (slot != null) {
+      int idx = slot.indexOf(kid);
+      if (idx >= 0) slot.remove(idx);
+    }
+  }
+
+  public ArrayList removeKids(String type) {
+    return (ArrayList)byType.remove(type);
+  }
+
+  public boolean castKids(String type, Class clazz) {
+    Constructor c = null;
+    try {
+      c = clazz.getConstructor(new Class[] {XmlDataClass});
+
+      ArrayList kids = getKids(type);
+      int size = kids.size();
+
+      for (int i = 0; i < size; i++) {
+        XmlData oldKid = (XmlData)kids.get(i);
+        XmlData newKid = (XmlData)c.newInstance(new Object[] {oldKid} );
+        kids.set(i, newKid);
+      }
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  public void trim() {
+    for (Iterator list = byType.entrySet().iterator();
+                  list.hasNext();) {
+      ArrayList entry = (ArrayList)((Map.Entry)list.next()).getValue();
+      entry.trimToSize();
+    }
+  }
+
+//  protected interface Expression {
+//    boolean satisfies(XmlData value);
+//  }
+
+  public static abstract class Expression /*implements Expression */{
+
+    public static Expression parse(String source) {
+      return source == null ? null :
+             Disjunction.parseDisjunction(source);
+    };
+
+    private static class Comparison extends Expression {
+      static final int OP_NOP = 0;
+      static final int OP_EQ  = 1;
+      static final int OP_NE  = 2;
+      String name;
+      String value;
+      int op;
+
+      Comparison(String name, String op, String value) {
+        this.name  = name;
+        this.op    = op.equals("==") ? OP_EQ :
+                     op.equals("!=") ? OP_NE :
+                                       OP_NOP;
+        this.value = value;
+      }
+
+      static Comparison parseComparison(String expression) {
+        int n0 = 0;
+        while (n0 < expression.length() && expression.charAt(n0) == ' ') n0++;
+        if (n0 >= expression.length()) return null;
+        int n1 = n0+1;
+        while (n1 < expression.length() && expression.charAt(n1) != ' ') n1++;
+        if (n1 >= expression.length()) return null;
+
+        String name = (expression.charAt(n0) == '"')     ?
+                        expression.substring(n0+1, n1-1) :
+                        expression.substring(n0,   n1);
+        int o0 = n1+1;
+        while (o0 < expression.length() && expression.charAt(o0) == ' ') o0++;
+        if (o0 >= expression.length()) return null;
+        int o1 = o0+1;
+        while (o1 < expression.length() && expression.charAt(o1) != ' ') o1++;
+        if (o1 >= expression.length()) return null;
+        String op = expression.substring(o0, o1);
+        int v0 = o1+1;
+        while (v0 < expression.length() && expression.charAt(v0) != '"') v0++;
+        if (v0 >= expression.length()) return null;
+        int v1 = v0+1;
+        while (v1 < expression.length() && expression.charAt(v1) != '"') v1++;
+        if (v1 >= expression.length()) return null;
+        String value = expression.substring(v0+1, v1);
+        return new Comparison(name, op, value);
+      }
+
+      boolean satisfies(XmlData entity) {
+        String toCompare = name.equals(".") ? entity.getValue() :
+                           name.equals(":") ? entity.getType()  :
+                           entity.getAttribute(name);
+        return (op == OP_EQ) ?  value.equals(toCompare) :
+               (op == OP_NE) ? !value.equals(toCompare) : false;
+      }
+    }
+
+    private static class Conjunction extends Expression {
+      Comparison[] comparisons;
+
+      Conjunction(ArrayList comparisonList) {
+
+        comparisons = (Comparison[])comparisonList.toArray(
+                        new Comparison[comparisonList.size()]);
+      }
+
+      static Conjunction parseConjunction(String expression) {
+        ArrayList comparisonList = new ArrayList();
+        boolean inQuote = false;
+        int last = expression.length();
+        for (int i = 0; i < expression.length(); i = last+1) {
+          for (last = i; last < expression.length(); last++) {
+            char c = expression.charAt(last);
+            if (c == '"') {
+              inQuote = !inQuote;
+            } else if (!inQuote && c == '&') {
+              break;
+            }
+          }
+          Comparison comparison = Comparison.parseComparison(expression.substring(i, last));
+          if (comparison != null)
+            comparisonList.add(comparison);
+        }
+        return new Conjunction(comparisonList);
+      }
+
+      boolean satisfies(XmlData entity) {
+        for (int i = 0; i < comparisons.length; i++) {
+          if (!comparisons[i].satisfies(entity)) return false;
+        }
+        return true;
+      }
+    }
+
+    private static class Disjunction extends Expression {
+      Conjunction[] conjunctions;
+
+      Disjunction(java.util.ArrayList conjunctionList) {
+        conjunctions = (Conjunction[])conjunctionList.toArray(
+                        new Conjunction[conjunctionList.size()]);
+      }
+
+      static Disjunction parseDisjunction(String expression) {
+        ArrayList conjunctionList = new ArrayList();
+        boolean inQuote = false;
+        int last = expression.length();
+        for (int i = 0; i < expression.length(); i = last+1) {
+          for (last = i; last < expression.length(); last++) {
+            char c = expression.charAt(last);
+            if (c == '"') {
+              inQuote = !inQuote;
+            } else if (!inQuote && c == '|') {
+              break;
+            }
+          }
+          Conjunction conjunction = Conjunction.parseConjunction(expression.substring(i, last));
+          if (conjunction != null)
+            conjunctionList.add(conjunction);
+        }
+        return new Disjunction(conjunctionList);
+      }
+
+      boolean satisfies(XmlData entity) {
+        for (int i = 0; i < conjunctions.length; i++) {
+          if (conjunctions[i].satisfies(entity)) return true;
+        }
+        return false;
+      }
+    }
+
+    abstract boolean satisfies(XmlData entity);
+  }
+
+  public boolean satisfies(Expression expression) {
+    return expression == null ? true : expression.satisfies(this);
+  }
+
+  public boolean satisfies(String expression) {
+    return satisfies(Expression.parse(expression));
+  }
+
+  public XmlData selectTree(Expression expression) {
+    if (expression == null) return this;
+    if (!expression.satisfies(this)) return null;
+
+    ArrayList goodKids = new ArrayList();
+    for (Iterator i = getAllKids().iterator(); i.hasNext();) {
+      XmlData candidate = ((XmlData)i.next()).selectTree(expression);
+      if (candidate != null) goodKids.add(candidate);
+    }
+
+    return new XmlData(type, value, attr, goodKids);
+  }
+
+  public XmlData selectTree(String expression) {
+    return selectTree(Expression.parse(expression));
+  }
+}

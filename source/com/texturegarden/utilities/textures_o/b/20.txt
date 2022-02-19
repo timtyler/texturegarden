@@ -1,0 +1,20 @@
+Setup
+
+Animate 
+SetSeed 22
+Clear2D
+BandwidthLimitedFrequencyNoise2D 65536 10 16
+InverseFFT2D 
+Equalise2D 
+Process2D AddCyclic AddCyclic AddCyclic Sin 65535 X 1 Bell 65535 Y 1 Time C
+Return
+
+Palette
+MakeColourMapHSB Invert Bell 33535 X 1 55555 AddCeiling Sawtooth 65535 X 1 32768
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation Sin 65535 C 1

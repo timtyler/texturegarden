@@ -1,0 +1,19 @@
+Setup 
+SetOffsetX 32769 
+SetOffsetY 32769 
+Animate 
+SetSeed 22 
+Clear2D 
+BandwidthLimitedFrequencyNoise2D 10000 2 4 
+InverseFFT2D 
+VMirror2D CombinationAdd 
+HMirror2D CombinationAdd 
+Equalise2D 
+Return 
+Palette 
+MakeColourMapRGB Sawtooth 65537 X 1 32001 Sawtooth 65534 X 2 
+Return 
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation Sin 65535 C 6 

@@ -1,0 +1,28 @@
+Setup
+SetSeed 5
+Clear2D 
+Particle 25000 25000 0 0 3000 3000 32767 1
+Particle 25000 28000 0 0 3000 3000 0 1
+Particle 39000 25000 0 0 3000 3000 32767 1
+Particle 39000 28000 0 0 3000 3000 0 1
+Particle 32768 38768 0 0 3000 3000 0 1
+Particle 32768 41768 0 0 3000 3000 32767 1
+
+Particle 0 0 0 0 300 65535 0 1
+Particle 0 0 0 0 65535 300 0 1
+
+DoAnimation 1
+
+Animate
+WaterAnimationBuffer Buffer0 0
+Return
+
+Palette
+MakeColourMapRGB Sawtooth 65535 X 32 Sawtooth 65535 X 32 Sawtooth 65535 X 32
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation C 

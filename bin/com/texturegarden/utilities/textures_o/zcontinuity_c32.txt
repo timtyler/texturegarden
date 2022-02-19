@@ -1,0 +1,20 @@
+Setup
+SetSeed 11
+Process2D Or Random 0xFFF01FF Or Square 65535 Y 2 ShiftLeft Square 65535 X 2 16
+DoAnimation 333
+
+Animate
+ReactionDiffusion1 0 1500 3559 48 24 17 17
+Return
+
+Palette
+MakeColourMapRGB Invert X X X
+Return
+
+GetColour
+ReturnColour IndexColourQuick Index2DQuick X Y
+
+GetElevation 
+ReturnElevation C
+
+Sawtooth 65535 C 1

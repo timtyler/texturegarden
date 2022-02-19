@@ -1,0 +1,19 @@
+Setup 
+Animate 
+SetSeed 22 
+Clear2D 
+FrequencyNoise2DQuick 65536 16 32 12 12 
+InverseFFT2D 
+Equalise2D 
+Process2D SubtractCyclic SubtractCyclic AddCyclic C Sin 65535 X 1 Sin 65535 Y 1 Time 
+Return 
+Palette 
+MakeColourMapHSB Invert Bell 50000 X 1 65535 AddCeiling Bell 65535 X 1 40000 
+Return 
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation Sin 65535 C 1 
+Settings 
+SetSpeed 2353 
+Return 

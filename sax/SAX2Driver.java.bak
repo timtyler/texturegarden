@@ -1,0 +1,73 @@
+package SaxDriver;
+
+import java.io.IOException;
+import org.xml.sax.*;
+import org.xml.sax.helpers.ParserAdapter;
+
+/**
+ * SAX2 wrapper for XP.
+ * This wrapper reports that XP doesn't validate,
+ * and that it always processes external entities.
+ * Although this parser could partially support a LexicalHandler property
+ * (to expose comments), it doesn't.
+ */
+public class SAX2Driver extends ParserAdapter
+{
+    public SAX2Driver ()
+    {
+	super (new Driver ());
+    }
+
+    public boolean getFeature (String id)
+    throws SAXNotRecognizedException, SAXNotSupportedException
+    {
+	if ("http://xml.org/sax/features/validation".equals (id))
+	    return false;
+	if ("http://xml.org/sax/features/external-general-entities"
+		.equals (id))
+	    return true;
+	if ("http://xml.org/sax/features/external-parameter-entities"
+		.equals (id))
+	    return true;
+
+	return super.getFeature (id);
+    }
+
+    public void setFeature (String id, boolean value)
+    throws SAXNotRecognizedException, SAXNotSupportedException
+    {
+	boolean	current = getFeature (id);
+
+	if (current == value)
+	    return;
+	if ("http://xml.org/sax/features/validation".equals (id)
+		|| "http://xml.org/sax/features/external-general-entities"
+			.equals (id)
+		|| "http://xml.org/sax/features/external-parameter-entities"
+			.equals (id))
+	    throw new SAXNotSupportedException (id);
+	super.setFeature (id, value);
+    }
+
+    public void parse (InputSource in)
+    throws SAXException, IOException
+    {
+	try {
+	    super.parse (in);
+	    // calls endDocument once, except not
+	    // when handling an aborted parse
+	} catch (IOException e) {
+	    ContentHandler handler = getContentHandler ();
+	    if (handler != null) handler.endDocument ();
+	    throw e;
+	} catch (RuntimeException e) {
+	    ContentHandler handler = getContentHandler ();
+	    if (handler != null) handler.endDocument ();
+	    throw e;
+	} catch (SAXException e) {
+	    ContentHandler handler = getContentHandler ();
+	    if (handler != null) handler.endDocument ();
+	    throw e;
+	}
+    }
+}

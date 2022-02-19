@@ -1,0 +1,21 @@
+Setup
+SetSeed 5
+Clear2D
+HeightMapScale 0xFFFF
+Process2D 0x3FFF3FFF
+
+DoAnimation 1
+
+Animate
+WaterReversibleAnimationBuffer Buffer0 0
+Return
+
+Palette
+MakeColourMapRGB 65535 65535 0 
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation
+ReturnElevation C

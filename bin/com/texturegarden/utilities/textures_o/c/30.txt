@@ -1,0 +1,18 @@
+Setup
+SetSeed 11
+Process2DQuick Mask Random 0xFFFFFFFF 0x40008000
+DoAnimation 96
+
+Animate
+ReactionDiffusion1 Buffer0 1500 8357 187 60 14 14
+Return
+
+Palette
+MakeColourMapRGB Sawtooth 65535 X 1 Bell 65535 X 1 SubtractCyclic 65535 Sin 65535 X 1
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation Sawtooth 65535 C 1

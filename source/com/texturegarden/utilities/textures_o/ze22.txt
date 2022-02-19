@@ -1,0 +1,21 @@
+Setup 
+SetSeed 7 
+Process2D Random 0xD000
+Process2D AddCyclic Bell 65535 X 2 AddCyclic Bell 65535 Y 2 C
+DoAnimation 32
+Return
+
+Animate 
+LiquidCrystal1 Buffer0 Speed 0x400
+Return
+
+Palette 
+MakeColourMapRGB Sawtooth 65535 X 1 Sawtooth 65535 X 1 Sawtooth 65535 X 1
+Return 
+
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation C 
+
+MakeColourMapRGB X Subtract 32000 X Invert X 

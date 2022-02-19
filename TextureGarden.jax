@@ -1,0 +1,320 @@
+#NOCOMPATIBLESERIALIZATION
+#NOTRANSFORM
+
+#INCLUDECLASS ArrayClearer
+#INCLUDECLASS BitUtils
+
+#INCLUDECLASS CAProcess2D$1
+#INCLUDECLASS CAProcess2D$2
+#INCLUDECLASS CAProcess2D$3
+#INCLUDECLASS CAProcess2D$4
+#INCLUDECLASS CAProcess2D$5
+#INCLUDECLASS CAProcess2D$6
+#INCLUDECLASS CAProcess2D$7
+#INCLUDECLASS CAProcess2D$8
+#INCLUDECLASS CAProcess2D
+
+#INCLUDECLASS ColourFunction
+#INCLUDECLASS ColourMap
+
+#INCLUDECLASS ComplexArray1D
+#INCLUDECLASS ComplexArray2D
+
+#INCLUDECLASS DiffusionLimitedAggregation$1
+#INCLUDECLASS DiffusionLimitedAggregation
+
+#INCLUDECLASS DragAndDrop
+
+#INCLUDECLASS Executor
+
+#INCLUDECLASS FFT1D
+#INCLUDECLASS FFT2D
+
+#INCLUDECLASS FFTNFP
+
+#INCLUDECLASS FileLoader
+
+#INCLUDECLASS FractalDrainage$1
+#INCLUDECLASS FractalDrainage$2
+#INCLUDECLASS FractalDrainage$3
+#INCLUDECLASS FractalDrainage$4
+#INCLUDECLASS FractalDrainage$5
+#INCLUDECLASS FractalDrainage$6
+#INCLUDECLASS FractalDrainage$7
+#INCLUDECLASS FractalDrainage
+
+#INCLUDECLASS FractalLandscape
+
+#INCLUDECLASS GlobalSettings
+
+#INCLUDECLASS HeightMap2D$1
+#INCLUDECLASS HeightMap2D$2
+#INCLUDECLASS HeightMap2D$3
+#INCLUDECLASS HeightMap2D
+
+#INCLUDECLASS HeightMapOperation
+#INCLUDECLASS HeightReader
+
+#INCLUDECLASS IdleMessage
+
+#INCLUDECLASS Instruction
+
+#INCLUDECLASS InstructionManager
+#INCLUDECLASS InstructionManager$1
+#INCLUDECLASS InstructionManager$1$1
+#INCLUDECLASS InstructionManager$2
+#INCLUDECLASS InstructionManager$3
+#INCLUDECLASS InstructionManager$4
+#INCLUDECLASS InstructionManager$5
+#INCLUDECLASS InstructionManager$6
+#INCLUDECLASS InstructionManager$7
+#INCLUDECLASS InstructionManager$8
+#INCLUDECLASS InstructionManager$9
+
+#INCLUDECLASS InstructionManager$10
+#INCLUDECLASS InstructionManager$11
+#INCLUDECLASS InstructionManager$12
+#INCLUDECLASS InstructionManager$13
+#INCLUDECLASS InstructionManager$14
+#INCLUDECLASS InstructionManager$15
+#INCLUDECLASS InstructionManager$16
+#INCLUDECLASS InstructionManager$17
+#INCLUDECLASS InstructionManager$18
+#INCLUDECLASS InstructionManager$19
+
+#INCLUDECLASS InstructionManager$20
+#INCLUDECLASS InstructionManager$21
+#INCLUDECLASS InstructionManager$22
+#INCLUDECLASS InstructionManager$23
+#INCLUDECLASS InstructionManager$24
+#INCLUDECLASS InstructionManager$25
+#INCLUDECLASS InstructionManager$26
+#INCLUDECLASS InstructionManager$27
+#INCLUDECLASS InstructionManager$28
+#INCLUDECLASS InstructionManager$29
+
+#INCLUDECLASS InstructionManager$30
+#INCLUDECLASS InstructionManager$31
+#INCLUDECLASS InstructionManager$32
+#INCLUDECLASS InstructionManager$33
+#INCLUDECLASS InstructionManager$34
+#INCLUDECLASS InstructionManager$35
+#INCLUDECLASS InstructionManager$36
+#INCLUDECLASS InstructionManager$37
+#INCLUDECLASS InstructionManager$38
+#INCLUDECLASS InstructionManager$39
+
+#INCLUDECLASS InstructionManager$40
+#INCLUDECLASS InstructionManager$41
+#INCLUDECLASS InstructionManager$42
+#INCLUDECLASS InstructionManager$43
+#INCLUDECLASS InstructionManager$44
+#INCLUDECLASS InstructionManager$45
+#INCLUDECLASS InstructionManager$46
+#INCLUDECLASS InstructionManager$47
+#INCLUDECLASS InstructionManager$48
+#INCLUDECLASS InstructionManager$49
+
+#INCLUDECLASS InstructionManager$50
+#INCLUDECLASS InstructionManager$51
+#INCLUDECLASS InstructionManager$52
+#INCLUDECLASS InstructionManager$53
+#INCLUDECLASS InstructionManager$54
+#INCLUDECLASS InstructionManager$55
+#INCLUDECLASS InstructionManager$56
+#INCLUDECLASS InstructionManager$57
+#INCLUDECLASS InstructionManager$58
+#INCLUDECLASS InstructionManager$59
+
+#INCLUDECLASS InstructionManager$60
+#INCLUDECLASS InstructionManager$61
+#INCLUDECLASS InstructionManager$62
+#INCLUDECLASS InstructionManager$63
+#INCLUDECLASS InstructionManager$64
+#INCLUDECLASS InstructionManager$65
+#INCLUDECLASS InstructionManager$66
+#INCLUDECLASS InstructionManager$67
+#INCLUDECLASS InstructionManager$68
+#INCLUDECLASS InstructionManager$69
+
+#INCLUDECLASS InstructionManager$70
+#INCLUDECLASS InstructionManager$71
+#INCLUDECLASS InstructionManager$72
+#INCLUDECLASS InstructionManager$73
+#INCLUDECLASS InstructionManager$74
+#INCLUDECLASS InstructionManager$75
+#INCLUDECLASS InstructionManager$76
+#INCLUDECLASS InstructionManager$77
+#INCLUDECLASS InstructionManager$78
+#INCLUDECLASS InstructionManager$79
+
+#INCLUDECLASS InstructionManager$80
+#INCLUDECLASS InstructionManager$81
+#INCLUDECLASS InstructionManager$82
+#INCLUDECLASS InstructionManager$83
+#INCLUDECLASS InstructionManager$84
+#INCLUDECLASS InstructionManager$85
+#INCLUDECLASS InstructionManager$86
+#INCLUDECLASS InstructionManager$87
+#INCLUDECLASS InstructionManager$88
+#INCLUDECLASS InstructionManager$89
+
+#INCLUDECLASS InstructionManager$90
+#INCLUDECLASS InstructionManager$91
+#INCLUDECLASS InstructionManager$92
+#INCLUDECLASS InstructionManager$93
+#INCLUDECLASS InstructionManager$94
+#INCLUDECLASS InstructionManager$95
+#INCLUDECLASS InstructionManager$96
+#INCLUDECLASS InstructionManager$97
+#INCLUDECLASS InstructionManager$98
+#INCLUDECLASS InstructionManager$99
+
+#INCLUDECLASS InstructionManager$100
+#INCLUDECLASS InstructionManager$101
+#INCLUDECLASS InstructionManager$102
+#INCLUDECLASS InstructionManager$103
+#INCLUDECLASS InstructionManager$104
+#INCLUDECLASS InstructionManager$105
+#INCLUDECLASS InstructionManager$106
+#INCLUDECLASS InstructionManager$107
+#INCLUDECLASS InstructionManager$108
+#INCLUDECLASS InstructionManager$109
+
+#INCLUDECLASS InstructionManager$110
+#INCLUDECLASS InstructionManager$111
+#INCLUDECLASS InstructionManager$112
+#INCLUDECLASS InstructionManager$113
+#INCLUDECLASS InstructionManager$114
+#INCLUDECLASS InstructionManager$115
+#INCLUDECLASS InstructionManager$116
+#INCLUDECLASS InstructionManager$117
+#INCLUDECLASS InstructionManager$118
+#INCLUDECLASS InstructionManager$119
+
+#INCLUDECLASS InstructionManager$120
+#INCLUDECLASS InstructionManager$121
+#INCLUDECLASS InstructionManager$122
+#INCLUDECLASS InstructionManager$123
+#INCLUDECLASS InstructionManager$124
+#INCLUDECLASS InstructionManager$125
+#INCLUDECLASS InstructionManager$126
+#INCLUDECLASS InstructionManager$127
+#INCLUDECLASS InstructionManager$128
+#INCLUDECLASS InstructionManager$129
+
+#INCLUDECLASS InstructionManager$130
+#INCLUDECLASS InstructionManager$131
+#INCLUDECLASS InstructionManager$132
+#INCLUDECLASS InstructionManager$133
+#INCLUDECLASS InstructionManager$134
+#INCLUDECLASS InstructionManager$135
+#INCLUDECLASS InstructionManager$136
+#INCLUDECLASS InstructionManager$137
+#INCLUDECLASS InstructionManager$138
+#INCLUDECLASS InstructionManager$139
+
+#INCLUDECLASS InstructionManager$140
+#INCLUDECLASS InstructionManager$141
+#INCLUDECLASS InstructionManager$142
+#INCLUDECLASS InstructionManager$143
+#INCLUDECLASS InstructionManager$144
+#INCLUDECLASS InstructionManager$145
+#INCLUDECLASS InstructionManager$146
+#INCLUDECLASS InstructionManager$147
+#INCLUDECLASS InstructionManager$148
+#INCLUDECLASS InstructionManager$149
+
+#INCLUDECLASS InstructionManager$150
+#INCLUDECLASS InstructionManager$151
+#INCLUDECLASS InstructionManager$152
+#INCLUDECLASS InstructionManager$153
+#INCLUDECLASS InstructionManager$154
+#INCLUDECLASS InstructionManager$155
+
+#INCLUDECLASS IsingModel$1
+#INCLUDECLASS IsingModel$2
+#INCLUDECLASS IsingModel
+
+#INCLUDECLASS IsingOperation
+
+#INCLUDECLASS JUR
+
+#INCLUDECLASS Log
+
+#INCLUDECLASS MargolusOperation
+#INCLUDECLASS MargolusProcess2D
+
+#INCLUDECLASS Message$1
+#INCLUDECLASS Message
+
+#INCLUDECLASS MooreOperation
+
+#INCLUDECLASS MsgCloneTexture
+#INCLUDECLASS MsgCopyTexture
+#INCLUDECLASS MsgNewTexture
+
+#INCLUDECLASS MsgTextureSelection
+
+#INCLUDECLASS Mutator
+
+#INCLUDECLASS Presets
+
+#INCLUDECLASS Pointer
+
+#INCLUDECLASS Program
+#INCLUDECLASS ProgramProcessor
+
+#INCLUDECLASS ReactionDiffusion$1
+#INCLUDECLASS ReactionDiffusion$2
+#INCLUDECLASS ReactionDiffusion$3
+#INCLUDECLASS ReactionDiffusion$4
+#INCLUDECLASS ReactionDiffusion$5
+#INCLUDECLASS ReactionDiffusion
+
+#INCLUDECLASS Render
+
+#INCLUDECLASS ResourceLoader
+
+#INCLUDECLASS SimpleArray1D
+
+#INCLUDECLASS SimpleArray2D
+#INCLUDECLASS SimpleArray2D$1
+#INCLUDECLASS SimpleArray2D$2
+
+#INCLUDECLASS SquareRoot
+
+#INCLUDECLASS Texture
+
+#INCLUDECLASS TextureArray
+#INCLUDECLASS TextureArray$1
+#INCLUDECLASS TextureArray$2
+
+#INCLUDECLASS TextureContainer
+
+#INCLUDECLASS TextureGarden
+
+#INCLUDECLASS TGCanvas
+#INCLUDECLASS TVCanvas
+
+#INCLUDECLASS TTAppletFrame
+#INCLUDECLASS TTAppletFrame$1
+#INCLUDECLASS TTCanvas
+#INCLUDECLASS TTChoice
+#INCLUDECLASS TTImage
+#INCLUDECLASS TTMouseAction
+#INCLUDECLASS TTMouseMovement
+#INCLUDECLASS TTNumStr
+
+#INCLUDECLASS Utils
+
+#INCLUDECLASS VNOperation
+
+#INCLUDECLASS Water$1
+#INCLUDECLASS Water
+
+#INCLUDECLASS ZipLoader
+
+#APPLICATION TextureGarden
+
+#PATH .;C:\Program1\Java\JDKs\Sun\jre\lib\rt.jar

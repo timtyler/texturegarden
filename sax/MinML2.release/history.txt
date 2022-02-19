@@ -1,0 +1,29 @@
+Version 0.1 4th May 2001
+
+First production release
+
+____________________________
+
+Version 0.2 22nd May 2001
+Fixed bug where an empty string was passed to
+endElement when the element was of the form: <element/>
+
+Fixed bug with minml2.jar which made it unusable.
+
+___________________________
+
+Version 0.3 25th November 2001
+
+Added support for mixed content!
+
+Migrated some changes to increase prerformance from MinML.
+
+Modified the way in which attributes are processed. This
+should make the parser faster. Thanks to Pete Hendry
+(peter.hendry@capeclear.com) for suggestion this.
+
+Removed a bug which caused startDocument() not to me called.
+Thanks to Frederick J. Ingham (fingham@earthlink.net) for
+reporting this bug.
+
+

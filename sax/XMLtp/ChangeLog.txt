@@ -1,0 +1,119 @@
+Copyright (c) 1999 - 2001 Thomas Weidenfeller
+All rights reserved.
+
+Changes for Release 1.7
+
+- Added a streaming mode, so the parser can be used to e.g. parse messages
+  from a network connection, where there is no single root element in the
+  data stream, but many. See setStreamingMode().
+
+- Updated the main Makefile (the 1.6 Makefile didn't compile two helper classes)
+
+- GenericElementTreeNode.toString() now correctly encodes attribute values.
+
+- Cleaned up the IgnoreUnknownEntities related methods to conform to the
+  bean interface.
+
+
+Changes for Release 1.6
+
+- Rewrite of the entity decoding (resolveReference(s), etc.). Now much
+  simpler, faster, and with less bugs :-)
+
+- Fixed a bug in Utils:XMLEncode(), which lead to wrong encoding of ampersands.
+
+- Verified that XMLtp works with JDK 1.3.
+
+- Minor documentation enhancements.
+
+
+Changes for Release 1.5
+
+- Handling of the closing tag of an element changed. Now an element can
+  unchain from its parent in the close() method, by setting its parent to null.
+  This allows Elements to avoid a memory leak in case they are not actually
+  used by their parent.
+
+- New exeption IllegalChar to indicate an illegal character in the input.
+
+- Now CDATA is parsed, too. And added to an Element as part of the Element's
+  value. This is a complete re-write of a patch provided by Travis Bauer.
+
+- New character read method readChar() which follows the XML standard more
+  closely than the old read() method. This was necessary in order to implement
+  CDATA support correctly.
+
+- CDATA encoding utilities.
+
+
+Changes for Release 1.4:
+
+- Ported to Java 2 (aka JDK 1.2).
+
+- Fixed a lot of JavaDoc comments to be able to use JDK 1.2's JavaDoc now.
+
+- EndTagDoesntMatch renamed to EndTagDoesNotMatch (old class is still provided
+  for backward compatibility).
+
+
+Changes for Release 1.3:
+
+- XMLtp.Utils.XMLEncode now reacts graceful to null arguments
+
+- Fixed stupid bug in decoding ampersand (&amp;) references,
+  ReferenceNotTerminated exceptions were thrown for perfectly legal references
+
+- All variants of XMLtp.addElement(s) now check if they really get a class
+  which implements the Element interface.
+
+- XMLtp.Utils now has a few methods to check for the implementation of a
+  certain interface
+
+
+Changes for Release 1.2:
+
+- ElementAdapter is now cloneable
+
+- XMLtp.Utils added with a simple XML String encoder
+
+- User's guide enhanced
+
+
+Changes for Release 1.1:
+
+- XMLException no longer abstract. Can now be thrown by clients using
+  the library.
+
+- IllegalAttrib now public, so it can be thrown by clients not in the
+  XMLtp package, esp. classes implementing the Element interface.
+
+- Line number now inserted in exception thrown by Element.close()
+
+- Line number counting no longer has an offset of one.
+
+- Element.getName() renamed into Element.getElementName(). Old method name
+  was too "generic" and caused confusion in some applications.
+
+- ElementAdapter had a superflous import statement. Removed.
+
+- Coupling between XMLtp and GenericElementTreeNode removed. This was necessary
+  to remove the coupling between XMLtp and Swing (TreeNode as used by
+  GenericElementTreeNode is part of Swing). Some users complained that they
+  don't want, or couldn't use Swing in their applications.
+
+  + XMLtp//[set|get]AutoGenerateElements() (note the plural) are replaced by
+    XMLtp//[set|get]AutoGenerateElement(). The new methods now deal with
+    Class objects instead of boolean flags. The Class object provided is
+    used as the generic element class, and instanciated when no specific
+    class for an element had been registered.
+
+  + XMLtp.GenericElementTreeNode moved to XMLtp.jfc.GenericElementTreeNode
+    to indicate the dependency of that class from Swing.
+
+- New class XMLtp.Null, since several Java compilers issued warnings about
+  the class when it was a non-public class in XMLtp.GenericElement.
+
+
+Release 1.0:
+
+First stable release.

@@ -1,0 +1,24 @@
+Setup
+SetSeed 5
+Process2D Or Mask Random 0xFFFF0FFF Mask Square 65535 X 2 Square 65535 Y 2 ShiftLeft Or Square 65535 X 1 Square 65535 Y 1 16
+DoAnimation 300
+
+Animate
+FractalDrainage1 Buffer0 50 0 8 6 46 0xF000 0x1000
+Return
+
+Process2D Or Random 0xFFFFFFFF Or Square 65535 Y 5 ShiftLeft Square 65535 X 6 16
+
+FractalDrainage1 0 130 0 7 7 64 0xF000 0x1000
+FractalDrainage1 0 1100 0 7 7 64 0xF000 0x1000
+FractalDrainage1 0 210 0 1 8 64 0xC000 0x1000
+
+Palette
+MakeColourMapRGB Invert X Invert X X
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation C

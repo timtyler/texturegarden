@@ -1,0 +1,1216 @@
+<pre class="sourcecode"><code>
+<b>package</b> com.myjavatools.xml;
+
+<b>import</b> java.io.File;
+<b>import</b> java.io.FileInputStream;
+<b>import</b> java.io.InputStream;
+<b>import</b> java.io.FileNotFoundException;
+<b>import</b> java.io.IOException;
+<b>import</b> java.util.Iterator;
+<b>import</b> java.net.URL;
+<b>import</b> java.util.Map;
+<b>import</b> java.util.Collection;
+<b>import</b> java.util.HashMap;
+<b>import</b> java.util.HashSet;
+
+<font color="#003399"><i>/**
+ *
+ * &lt;p&gt;Title: MyJavaTools: Rss Class&lt;/p&gt;
+ * &lt;p&gt;Description: Defines a container for RSS, Real Simple Syndication data format.&lt;/p&gt;
+ * &lt;p&gt;Copyright: This is public domain;
+ * The right of people to use, distribute, copy or improve the contents of the
+ * following may not be restricted.&lt;/p&gt;
+ *
+ * @author Vlad Patryshev
+ * @see &lt;a href=&quot;http://www.webreference.com/authoring/languages/xml/rss/intro/&quot;&gt;Introduction to RSS&lt;/a&gt;
+ * @see &lt;a href=&quot;http://www.xml.com/pub/a/2002/12/18/dive-into-xml.html?page=1&quot;&gt;Another introduction&lt;/a&gt;
+ * @see &lt;a href=&quot;http://web.resource.org/rss/1.0/spec&quot;&gt;RSS 1.0 Spec&lt;/a&gt;
+ * @see &lt;a href=&quot;http://blogs.law.harvard.edu/tech/rss&quot;&gt;RSS 2.0 Spec&lt;/a&gt;
+ *
+ * &lt;p&gt;The following RSS formats are suppored for reading: 0.91, 0.92, 1.0, 2.0.
+ * Output is always 2.0. The version of original document can be retrieved using
+ * getOriginalVersion().
+ */</i></font>
+<b>public</b> <b>class</b> Rss
+    <b>extends</b> BasicXmlData {
+  <font color="#003399"><i>/**
+   * Current RSS version
+   *
+   * {@value}
+   */</i></font>
+  <b>public</b> <b>static</b> <b>final</b> String LATEST_VERSION = <font color="#9933CC">&quot;2.0&quot;</font>;
+
+  <font color="#003399"><i>/**
+   * Default empty RSS structure
+   */</i></font>
+  <b>static</b> <b>final</b> XmlData DEFAULT_RSS =
+      <b>new</b> BasicXmlData(<font color="#9933CC">&quot;rss&quot;</font>, <b>null</b>,
+                       <b>new</b> String[] {<font color="#9933CC">&quot;version&quot;</font>, LATEST_VERSION}
+                       ,
+                       <b>new</b> BasicXmlData[] {<b>new</b> BasicXmlData(<font color="#9933CC">&quot;channel&quot;</font>)});
+
+  <b>private</b> XmlData channel = <b>null</b>;
+
+  <font color="#003399"><i>/**
+   * maps titles to items
+   */</i></font>
+  <b>private</b> Map itemIndex = <b>new</b> HashMap();
+
+  <b>private</b> String originalVersion;
+
+  <font color="#003399"><i>/**
+   * incorporates general purpose RSS member element functionality
+   */</i></font>
+  <b>private</b> <b>static</b> <b>class</b> Member
+      <b>extends</b> BasicXmlData {
+    <font color="#003399"><i>/**
+     * creates a member based on XmlData
+     * @param data XmlData source
+     */</i></font>
+    <b>protected</b> Member(XmlData data) {
+      <b>super</b>(data);
+      setValue(<b>null</b>);
+      setup();
+
+      cleanAttributes();
+    }
+
+    <font color="#003399"><i>/**
+     * creates XmlData element from name and value
+     * @param name String element name
+     * @param value String element value
+     * @return BasicXmlData
+     */</i></font>
+    <b>private</b> <b>static</b> BasicXmlData StringToElement(String name, String value) {
+      <b>return</b> <b>new</b> BasicXmlData(name, value);
+    }
+
+    <font color="#003399"><i>/**
+     * creates an array of XmlData elements from an array of name-value pairs
+     * @param pairs String[] name-value pairs
+     * @return BasicXmlData[]
+     */</i></font>
+    <b>private</b> <b>static</b> BasicXmlData[] StringsToElements(String[] pairs) {
+      BasicXmlData[] result = <b>new</b> BasicXmlData[pairs.length / 2];
+      <b>for</b> (<b>int</b> i = 0; i &lt; pairs.length; i += 2) {
+        result[i / 2] = StringToElement(pairs[i], pairs[i + 1]);
+      }
+      <b>return</b> result;
+    }
+
+    <font color="#003399"><i>/**
+     * creates a typical member element
+     * @param type String member type
+     * @param elements BasicXmlData[] member data
+     */</i></font>
+    <b>protected</b> Member(String type, BasicXmlData[] elements) {
+      <b>this</b>(<b>new</b> BasicXmlData(type, <b>null</b>, elements));
+    }
+
+    <font color="#003399"><i>/**
+     * creates a typical member element
+     * @param type String member type
+     * @param pairs String[] name-value pairs of member data
+     */</i></font>
+    <b>protected</b> Member(String type, String[] pairs) {
+      <b>this</b>(type, StringsToElements(pairs));
+    }
+
+    <font color="#003399"><i>/**
+     * adds a data element to member
+     * @param name String element name (a.k.a. type)
+     * @param value String element value
+     */</i></font>
+    <b>protected</b> <b>void</b> addElement(String name, String value) {
+      addKid(StringToElement(name, value));
+    }
+
+    <font color="#003399"><i>/**
+     * sets a data element of a member
+     * @param name String element name (a.k.a. type)
+     * @param value String element value
+     *
+     * if value == null, the element is removed.
+     * if element already exists, its value is changed,
+     * otherwise a new element is added
+     */</i></font>
+    <b>protected</b> <b>void</b> setElement(String name, String value) {
+      <b>if</b> (value == <b>null</b>) {
+        removeKids(name);
+      }
+      <b>else</b> <b>if</b> (getKid(name) == <b>null</b>) {
+        addElement(name, value);
+      }
+      <b>else</b> {
+        getKid(name).setValue(value);
+      }
+    }
+
+    <font color="#003399"><i>/**
+     * gets member description
+     * @return String
+     */</i></font>
+    <b>public</b> String getDescription() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;description&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * sets member description
+     * @param description String
+     */</i></font>
+    <b>public</b> <b>void</b> setDescription(String description) {
+      setElement(<font color="#9933CC">&quot;description&quot;</font>, description == <b>null</b> ? <b>null</b> : description.trim());
+    }
+
+    <font color="#003399"><i>/**
+     * gets member name
+     * @return String name
+     */</i></font>
+    <b>public</b> String getName() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;name&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets member title
+     * @return String title
+     */</i></font>
+    <b>public</b> String getTitle() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;title&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets member url
+     * @return String url
+     */</i></font>
+    <b>public</b> String getUrl() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;url&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets member link
+     * @return String link
+     */</i></font>
+    <b>public</b> String getLink() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;link&quot;</font>);
+    }
+
+    <b>protected</b> <b>void</b> setup() {
+      setDescription(getDescription());
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * &lt;p&gt;Image, Rss member class&lt;/p&gt;
+   * &lt;p&gt;Contains image data&lt;/p&gt;
+   */</i></font>
+  <b>public</b> <b>static</b> <b>class</b> Image
+      <b>extends</b> Member {
+
+    <font color="#003399"><i>/**
+     * creates an instance of Image data class
+     * @param title String image title
+     * @param url String image url
+     * @param link String image link
+     */</i></font>
+    <b>public</b> Image(String title,
+                 String url,
+                 String link) {
+      <b>super</b>(<font color="#9933CC">&quot;image&quot;</font>, <b>new</b> String[] {
+            <font color="#9933CC">&quot;title&quot;</font>, title,
+            <font color="#9933CC">&quot;url&quot;</font>, url,
+            <font color="#9933CC">&quot;link&quot;</font>, link
+      });
+    }
+
+    <font color="#003399"><i>/**
+     * creates an instance of Image data class
+     * @param title String image title
+     * @param description String image description
+     * @param url String image url
+     * @param link String image link
+     * @param height String image height
+     * @param width String image width
+     */</i></font>
+    <b>public</b> Image(String title,
+                 String description,
+                 String url,
+                 String link,
+                 String height,
+                 String width) {
+      <b>super</b>(<font color="#9933CC">&quot;image&quot;</font>, <b>new</b> String[] {
+            <font color="#9933CC">&quot;title&quot;</font>, title,
+            <font color="#9933CC">&quot;url&quot;</font>, url,
+            <font color="#9933CC">&quot;link&quot;</font>, link,
+            <font color="#9933CC">&quot;height&quot;</font>, height,
+            <font color="#9933CC">&quot;width&quot;</font>, width,
+            <font color="#9933CC">&quot;description&quot;</font>, description
+      });
+    }
+
+    <font color="#003399"><i>/**
+     * creates an instance of Image Rss data from source XmlData
+     * @param imageData XmlData containing
+     */</i></font>
+    <b>public</b> Image(XmlData imageData) {
+      <b>super</b>(imageData);
+    }
+
+    <b>protected</b> <b>void</b> setup() {
+      <b>super</b>.setup();
+      <b>if</b> (getHeight() == <b>null</b>) {
+        addElement(<font color="#9933CC">&quot;height&quot;</font>, <font color="#9933CC">&quot;31&quot;</font>);
+      }
+      <b>if</b> (getWidth() == <b>null</b>) {
+        addElement(<font color="#9933CC">&quot;width&quot;</font>, <font color="#9933CC">&quot;88&quot;</font>);
+      }
+    }
+
+    <font color="#003399"><i>/**
+     * gets image height
+     * @return String height
+     */</i></font>
+    <b>public</b> String getHeight() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;height&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets image width
+     * @return String width
+     */</i></font>
+    <b>public</b> String getWidth() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;width&quot;</font>);
+    }
+  };
+
+  <font color="#003399"><i>/**
+   * &lt;p&gt;TextInput, Rss member class&lt;/p&gt;
+   * &lt;p&gt;Contains textinput data&lt;/p&gt;
+   */</i></font>
+  <b>public</b> <b>static</b> <b>class</b> TextInput
+      <b>extends</b> Member {
+
+    <font color="#003399"><i>/**
+     * creates an instance of TextInput
+     *
+     * @param title String textinput title
+     * @param description String textinput description
+     * @param name String textinput name
+     * @param link String textinput link
+     */</i></font>
+    <b>public</b> TextInput(String title,
+                     String description,
+                     String name,
+                     String link) {
+      <b>super</b>(<font color="#9933CC">&quot;textInput&quot;</font>, <b>new</b> String[] {
+            <font color="#9933CC">&quot;title&quot;</font>, title,
+            <font color="#9933CC">&quot;name&quot;</font>, name,
+            <font color="#9933CC">&quot;link&quot;</font>, link,
+            <font color="#9933CC">&quot;description&quot;</font>, description});
+    }
+
+    <font color="#003399"><i>/**
+     * creates an instance of TextInput based on XmlData
+     * @param data XmlData data source
+     */</i></font>
+    <b>public</b> TextInput(XmlData data) {
+      <b>super</b>(data);
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * &lt;p&gt;Item, Rss member class&lt;/p&gt;
+   * &lt;p&gt;Contains item data&lt;/p&gt;
+   */</i></font>
+  <b>public</b> <b>static</b> <b>class</b> Item
+      <b>extends</b> Member {
+
+    <font color="#003399"><i>/**
+     * creates an instance of Item containing description only
+     * @param description String
+     */</i></font>
+    <b>public</b> Item(String description) {
+      <b>super</b>(<font color="#9933CC">&quot;item&quot;</font>, <b>new</b> String[] {<font color="#9933CC">&quot;description&quot;</font>, description});
+    }
+
+    <font color="#003399"><i>/**
+     * creates an instance of Item without description
+     * @param title String item title
+     * @param link String item link
+     */</i></font>
+    <b>public</b> Item(String title, String link) {
+      <b>super</b>(<font color="#9933CC">&quot;item&quot;</font>, <b>new</b> String[] {
+            <font color="#9933CC">&quot;title&quot;</font>, title,
+            <font color="#9933CC">&quot;link&quot;</font>, link});
+    }
+
+    <font color="#003399"><i>/**
+     * creates an instance of Item
+     * @param title String item title
+     * @param link String item link
+     * @param description String item description
+     */</i></font>
+    <b>public</b> Item(String title, String link, String description) {
+      <b>super</b>(<font color="#9933CC">&quot;item&quot;</font>, <b>new</b> String[] {
+            <font color="#9933CC">&quot;title&quot;</font>, title,
+            <font color="#9933CC">&quot;link&quot;</font>, link,
+            <font color="#9933CC">&quot;description&quot;</font>, description});
+    }
+
+    <font color="#003399"><i>/**
+     * creates an instance of Item
+     *
+     * @param title String item title
+     * @param link String item link
+     * @param description String item description
+     * @param author String item author
+     * @param pubDate String item publication date
+     */</i></font>
+    <b>public</b> Item(String title,
+                String link,
+                String description,
+                String author,
+                String pubDate) {
+      <b>this</b>(title, link, description);
+      addElement(<font color="#9933CC">&quot;author&quot;</font>, author);
+      addElement(<font color="#9933CC">&quot;pubDate&quot;</font>, pubDate);
+    }
+
+    <font color="#003399"><i>/**
+     * creates an instance of Item
+     *
+     * @param title String item title
+     * @param link String item link
+     * @param description String item description
+     * @param author String item author
+     * @param pubDate String item publication date
+     * @param category String item category
+     * @param comments String item comments
+     */</i></font>
+    <b>public</b> Item(String title,
+                String link,
+                String description,
+                String author,
+                String pubDate,
+                String category,
+                String comments) {
+      <b>this</b>(title, link, description, author, pubDate);
+      addElement(<font color="#9933CC">&quot;category&quot;</font>, category);
+      addElement(<font color="#9933CC">&quot;comments&quot;</font>, comments);
+    }
+
+    <font color="#003399"><i>/**
+     * creates an instance of Item
+     *
+     * Converts all pre-2.0 formats to 2.0
+     *
+     * @param data XmlData data source
+     */</i></font>
+    <b>public</b> Item(XmlData data) {
+      <b>super</b>(data);
+      XmlData creator = getKid(<font color="#9933CC">&quot;dc:creator&quot;</font>);
+      <b>if</b> (creator != <b>null</b>) {
+        removeKid(creator);
+        addElement(<font color="#9933CC">&quot;author&quot;</font>, creator.getValue());
+      }
+      XmlData pubDate = getKid(<font color="#9933CC">&quot;dc:date&quot;</font>);
+      <b>if</b> (pubDate != <b>null</b>) {
+        removeKid(pubDate);
+        addElement(<font color="#9933CC">&quot;pubDate&quot;</font>, pubDate.getValue());
+      }
+      XmlData enclosure = getKid(<font color="#9933CC">&quot;enclosure&quot;</font>);
+      <b>if</b> (enclosure != <b>null</b>) {
+        enclosure.setValue(<b>null</b>);
+      }
+    }
+
+    <font color="#003399"><i>/**
+     * gets item guid
+     * @return String item guid
+     */</i></font>
+    <b>public</b> String getGuid() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;guid&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets item author
+     * @return String item author
+     */</i></font>
+    <b>public</b> String getAuthor() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;author&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets item publication date
+     * @return String item publication date
+     */</i></font>
+    <b>public</b> String getPubDate() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;pubDate&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets item category
+     * @return String item category
+     */</i></font>
+    <b>public</b> String getCategory() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;category&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets item comments
+     * @return String item comments
+     */</i></font>
+    <b>public</b> String getComments() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;comments&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets item source name
+     * @return String item source name
+     */</i></font>
+    <b>public</b> String getSourceName() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;source&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets item source url
+     * @return String item source url
+     */</i></font>
+    <b>public</b> String getSourceUrl() {
+      <b>return</b> getKidAttribute(<font color="#9933CC">&quot;source&quot;</font>, <font color="#9933CC">&quot;url&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets item enclosure url
+     * @return String item enclosure url
+     */</i></font>
+    <b>public</b> String getEnclosureUrl() {
+      <b>return</b> getKidAttribute(<font color="#9933CC">&quot;enclosure&quot;</font>, <font color="#9933CC">&quot;url&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets item enclosure length
+     * @return String item enclosure length
+     */</i></font>
+    <b>public</b> String getEnclosureLength() {
+      <b>return</b> getKidAttribute(<font color="#9933CC">&quot;enclosure&quot;</font>, <font color="#9933CC">&quot;length&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * gets item item enclosure type
+     * @return String item enclosure type
+     */</i></font>
+    <b>public</b> String getEnclosureType() {
+      <b>return</b> getKidAttribute(<font color="#9933CC">&quot;enclosure&quot;</font>, <font color="#9933CC">&quot;type&quot;</font>);
+    }
+
+    <font color="#003399"><i>/**
+     * sets item source
+     *
+     * @param url String source url
+     * @param name String source name
+     */</i></font>
+    <b>public</b> <b>void</b> setSource(String url, String name) {
+      removeKids(<font color="#9933CC">&quot;source&quot;</font>);
+      addKid(<b>new</b> BasicXmlData(<font color="#9933CC">&quot;source&quot;</font>, name, <b>new</b> String[] {<font color="#9933CC">&quot;url&quot;</font>, url}));
+    }
+
+    <font color="#003399"><i>/**
+     * sets item enclosure
+     *
+     * @param url String enclosure url
+     * @param length String enclosure length
+     * @param type String enclosure type
+     */</i></font>
+    <b>public</b> <b>void</b> setEnclosure(String url, String length, String type) {
+      removeKids(<font color="#9933CC">&quot;enclosure&quot;</font>);
+      addKid(<b>new</b> BasicXmlData(<font color="#9933CC">&quot;enclosure&quot;</font>, <b>null</b>,
+                              <b>new</b> String[] {<font color="#9933CC">&quot;url&quot;</font>, url,
+                              <font color="#9933CC">&quot;length&quot;</font>, length,
+                              <font color="#9933CC">&quot;type&quot;</font>, type}));
+    }
+
+    <b>public</b> <b>void</b> setExpirationDate(String date) {
+      setElement(<font color="#9933CC">&quot;expirationDate&quot;</font>, date);
+    }
+
+    <b>public</b> String getExpirationDate() {
+      <b>return</b> getKidValue(<font color="#9933CC">&quot;expirationDate&quot;</font>);
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * creates empty Rss instance
+   * @throws InstantiationException it should not
+   */</i></font>
+  <b>public</b> Rss() <b>throws</b> InstantiationException {
+    <b>super</b>(DEFAULT_RSS);
+    setup();
+  }
+
+  <font color="#003399"><i>/**
+   * reads Rss contents from a file
+   *
+   * @param file File data source
+   * @throws FileNotFoundException if file not found
+   * @throws IOException if could not read
+   * @throws InstantiationException if could not parse the contents
+   */</i></font>
+  <b>public</b> Rss(File file) <b>throws</b> FileNotFoundException, IOException,
+      InstantiationException {
+    <b>this</b>(<b>new</b> FileInputStream(file));
+  }
+
+  <font color="#003399"><i>/**
+   * reads Rss from input stream
+   * @param is InputStream data source
+   * @throws IOException if could not read
+   * @throws InstantiationException if could not parse the data
+   */</i></font>
+  <b>public</b> Rss(InputStream is) <b>throws</b> IOException, InstantiationException {
+    <b>super</b>(is);
+    setup();
+  }
+
+  <font color="#003399"><i>/**
+   * creates an instance of Rss based on data from XmlData
+   *
+   * @param source XmlData data source
+   * @throws InstantiationException if could not extract data
+   */</i></font>
+  <b>public</b> Rss(XmlData source) <b>throws</b> InstantiationException {
+    <b>super</b>(source);
+    setup();
+  }
+
+  <font color="#003399"><i>/**
+   * reads Rss from a URL
+   *
+   * @param url URL data source
+   * @throws IOException if could not read data
+   * @throws InstantiationException if could not parse data
+   */</i></font>
+  <b>public</b> Rss(URL url) <b>throws</b> InstantiationException, IOException {
+    <b>super</b>(url);
+    setup();
+  }
+
+  <font color="#003399"><i>/**
+   * reshuffles the data to conform to ver. 2.0
+   *
+   * @throws InstantiationException if could not actually parse the data
+   */</i></font>
+  <b>private</b> <b>void</b> setup() <b>throws</b> InstantiationException {
+    setValue(<b>null</b>);
+    channel = getKid(<font color="#9933CC">&quot;channel&quot;</font>);
+    channel.setValue(<b>null</b>);
+    <b>if</b> (channel == <b>null</b>) {
+      <b>throw</b> <b>new</b> InstantiationException(<font color="#9933CC">&quot;Bad rss: channel missing&quot;</font>);
+    }
+
+    <b>if</b> (<font color="#9933CC">&quot;rdf:RDF&quot;</font>.equals(getType())) { <font color="#003399"><i>// 0.90 or 1.0</i></font>
+      parseRdfFormat();
+    }
+    <b>else</b> <b>if</b> (<font color="#9933CC">&quot;rss&quot;</font>.equals(getType())) {
+      originalVersion = getVersion();
+    }
+    <b>else</b> {
+      <b>throw</b> <b>new</b> InstantiationException(<font color="#9933CC">&quot;Unknown RSS format&quot;</font>);
+    }
+
+    channel.castKids(<font color="#9933CC">&quot;image&quot;</font>, Image.<b>class</b>);
+    channel.castKids(<font color="#9933CC">&quot;item&quot;</font>, Item.<b>class</b>);
+    setDescription(getDescription());
+    indexItems();
+    setAttribute(<font color="#9933CC">&quot;version&quot;</font>, <font color="#9933CC">&quot;2.0&quot;</font>);
+  }
+
+  <b>private</b> <b>void</b> indexItems() {
+    Collection items = channel.getKids(<font color="#9933CC">&quot;item&quot;</font>);
+    <b>if</b> (items != <b>null</b>) {
+      <b>for</b> (Iterator i = items.iterator(); i.hasNext(); ) {
+        Item item = <b>new</b> Item( (XmlData) i.next());
+        itemIndex.put(item.getTitle(), item);
+      }
+    }
+  }
+
+  <b>private</b> <b>void</b> parseRdfFormat() {
+    XmlData container;
+    setType(<font color="#9933CC">&quot;rss&quot;</font>);
+    cleanAttributes();
+    Collection badKids = <b>new</b> HashSet();
+    <b>for</b> (Iterator i = byType.keySet().iterator(); i.hasNext(); ) {
+      String key = i.next().toString();
+      <b>if</b> (key.startsWith(<font color="#9933CC">&quot;rdf:&quot;</font>)) {
+        badKids.add(key);
+      }
+    }
+
+    <b>for</b> (Iterator i = badKids.iterator(); i.hasNext(); ) {
+      byType.remove(i.next());
+    }
+    channel.cleanAttributes();
+    channel.removeKids(<font color="#9933CC">&quot;items&quot;</font>);
+
+    originalVersion = <font color="#9933CC">&quot;0.90&quot;</font>;
+    container = <b>this</b>;
+
+    <b>for</b> (Iterator i = getKids(<font color="#9933CC">&quot;item&quot;</font>).iterator(); i.hasNext(); ) {
+      <b>if</b> ( ( (XmlData) i.next()).getKid(<font color="#9933CC">&quot;description&quot;</font>) != <b>null</b>) {
+        originalVersion = <font color="#9933CC">&quot;1.0&quot;</font>;
+        <b>break</b>;
+      }
+    }
+
+    channel.addKids(removeKids(<font color="#9933CC">&quot;item&quot;</font>));
+    channel.addKids(removeKids(<font color="#9933CC">&quot;image&quot;</font>));
+    Collection netscape = removeKids(<font color="#9933CC">&quot;textinput&quot;</font>); <font color="#003399"><i>// Netscape's 0.91</i></font>
+    Collection userland = removeKids(<font color="#9933CC">&quot;textInput&quot;</font>); <font color="#003399"><i>// Userland's 0.91</i></font>
+    Collection textInputCollection = <b>new</b> HashSet();
+
+    <b>if</b> (netscape != <b>null</b>) {
+      textInputCollection.addAll(netscape);
+    }
+    <b>if</b> (userland != <b>null</b>) {
+      textInputCollection.addAll(userland);
+
+    }
+    <b>for</b> (Iterator i = textInputCollection.iterator(); i.hasNext(); ) {
+      ( (BasicXmlData) i.next()).setType(<font color="#9933CC">&quot;textInput&quot;</font>);
+    }
+    channel.addKids(textInputCollection);
+  }
+
+  <font color="#003399"><i>/**
+   * gets original version&lt;br&gt;
+   * Original version is the RSS version of source data
+   *
+   * @return String original version
+   */</i></font>
+  <b>public</b> String getOriginalVersion() {
+    <b>return</b> originalVersion;
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS version (which is 2.0)
+   *
+   * @return String current RSS version
+   */</i></font>
+  <b>public</b> String getVersion() {
+    <b>return</b> getAttribute(<font color="#9933CC">&quot;version&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS title
+   *
+   * @return String title
+   */</i></font>
+  <b>public</b> String getTitle() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;title&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS title
+   *
+   * @param title String
+   */</i></font>
+  <b>public</b> <b>void</b> setTitle(String title) {
+    channel.setKidValue(<font color="#9933CC">&quot;title&quot;</font>, title);
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS description
+   *
+   * @return String description
+   */</i></font>
+  <b>public</b> String getDescription() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;description&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS description
+   *
+   * @param description String
+   */</i></font>
+  <b>public</b> <b>void</b> setDescription(String description) {
+    <b>if</b> (description == <b>null</b>) {
+      channel.removeKids(<font color="#9933CC">&quot;description&quot;</font>);
+    }
+    <b>else</b> <b>if</b> (getDescription() == <b>null</b>) {
+      channel.addKid(<b>new</b> BasicXmlData(<font color="#9933CC">&quot;description&quot;</font>, description.trim()));
+    }
+    <b>else</b> {
+      channel.getKid(<font color="#9933CC">&quot;description&quot;</font>).setValue(description.trim());
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS link
+   * @return String link
+   */</i></font>
+  <b>public</b> String getLink() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;link&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS link
+   *
+   * @param link String
+   */</i></font>
+  <b>public</b> <b>void</b> setLink(String link) {
+    channel.setKidValue(<font color="#9933CC">&quot;link&quot;</font>, link);
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS language
+   *
+   * @return String RSS language
+   */</i></font>
+  <b>public</b> String getLanguage() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;language&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS langauge
+   *
+   * @param language String
+   */</i></font>
+  <b>public</b> <b>void</b> setLanguage(String language) {
+    channel.setKidValue(<font color="#9933CC">&quot;language&quot;</font>, language);
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS rating
+   *
+   * @return String rating
+   */</i></font>
+  <b>public</b> String getRating() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;rating&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS rating
+   *
+   * @param rating String
+   */</i></font>
+  <b>public</b> <b>void</b> setRating(String rating) {
+    channel.setKidValue(<font color="#9933CC">&quot;rating&quot;</font>, rating);
+  }
+
+  <font color="#003399"><i>/**
+   * gets copyright
+   * @return String copyright
+   */</i></font>
+  <b>public</b> String getCopyright() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;copyright&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets copyright string
+   * @param copyright String
+   */</i></font>
+  <b>public</b> <b>void</b> setCopyright(String copyright) {
+    channel.setKidValue(<font color="#9933CC">&quot;copyright&quot;</font>, copyright);
+  }
+
+  <font color="#003399"><i>/**
+   * gets publication date
+   * @return String publication date
+   */</i></font>
+  <b>public</b> String getPubDate() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;pubDate&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets publication date
+   * @param pubDate String
+   */</i></font>
+  <b>public</b> <b>void</b> setPubDate(String pubDate) {
+    channel.setKidValue(<font color="#9933CC">&quot;pubDate&quot;</font>, pubDate);
+  }
+
+  <font color="#003399"><i>/**
+   * gets last build date
+   * @return String last build date
+   */</i></font>
+  <b>public</b> String getLastBuildDate() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;lastBuildDate&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets last build date
+   *
+   * @param lastBuildDate String
+   */</i></font>
+  <b>public</b> <b>void</b> setLastBuildDate(String lastBuildDate) {
+    channel.setKidValue(<font color="#9933CC">&quot;lastBuildDate&quot;</font>, lastBuildDate);
+  }
+
+  <font color="#003399"><i>/**
+   * gets managing editor
+   *
+   * @return String managing editor
+   */</i></font>
+  <b>public</b> String getManagingEditor() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;managingEditor&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets managing editor
+   *
+   * @param managingEditor String
+   */</i></font>
+  <b>public</b> <b>void</b> setManagingEditor(String managingEditor) {
+    channel.setKidValue(<font color="#9933CC">&quot;managingEditor&quot;</font>, managingEditor);
+  }
+
+  <font color="#003399"><i>/**
+   * gets webmaster
+   *
+   * @return String webmaster
+   */</i></font>
+  <b>public</b> String getWebMaster() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;webMaster&quot;</font>);
+  }
+
+  <b>public</b> <b>void</b> setWebMaster(String webMaster) {
+    channel.setKidValue(<font color="#9933CC">&quot;webMaster&quot;</font>, webMaster);
+  }
+
+  <font color="#003399"><i>/**
+   * gets skip hours
+   * @return String skip hours
+   */</i></font>
+  <b>public</b> String getSkipHours() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;skipHours&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets skip hours
+   *
+   * @param skipHours String
+   */</i></font>
+  <b>public</b> <b>void</b> setSkipHours(String skipHours) {
+    channel.setKidValue(<font color="#9933CC">&quot;skipHours&quot;</font>, skipHours);
+  }
+
+  <font color="#003399"><i>/**
+   * gets skip days
+   *
+   * @return String skip days
+   */</i></font>
+  <b>public</b> String getSkipDays() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;skipDays&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets skip days
+   *
+   * @param skipDays String
+   */</i></font>
+  <b>public</b> <b>void</b> setSkipDays(String skipDays) {
+    channel.setKidValue(<font color="#9933CC">&quot;skipDays&quot;</font>, skipDays);
+  }
+
+  <font color="#003399"><i>/**
+   * gets docs value
+   *
+   * @return String RSS docs
+   */</i></font>
+  <b>public</b> String getDocs() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;docs&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets docs value
+   *
+   * @param docs String
+   */</i></font>
+  <b>public</b> <b>void</b> setDocs(String docs) {
+    channel.setKidValue(<font color="#9933CC">&quot;docs&quot;</font>, docs);
+  }
+
+  <b>public</b> <b>void</b> setImage(Image image) {
+    channel.removeKids(<font color="#9933CC">&quot;image&quot;</font>);
+    channel.addKid(image);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS Image element
+   *
+   * @param title String image title
+   * @param description String image description
+   * @param url String image url
+   * @param link String image link
+   * @param width String image width
+   * @param height String image height
+   */</i></font>
+  <b>public</b> <b>void</b> setImage(String title,
+                       String description,
+                       String url,
+                       String link,
+                       String width,
+                       String height) {
+    setImage(<b>new</b> Image(title, description, url, link, width, height));
+  }
+
+  <font color="#003399"><i>/**
+   * sets image from XmlData contents
+   *
+   * @param imageData XmlData data source
+   */</i></font>
+  <b>private</b> <b>void</b> setImage(XmlData imageData) {
+    <b>if</b> (imageData == <b>null</b>) {
+      channel.removeKids(<font color="#9933CC">&quot;image&quot;</font>);
+    }
+    <b>else</b> {
+      setImage(imageData);
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS image
+   *
+   * @return Image RSS image element
+   */</i></font>
+  <b>public</b> Image getImage() {
+    <b>return</b> (Image) channel.getKid(<font color="#9933CC">&quot;image&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS textinput element
+   *
+   * @param textInput TextInput
+   */</i></font>
+  <b>public</b> <b>void</b> setTextInput(TextInput textInput) {
+    channel.removeKids(<font color="#9933CC">&quot;textInput&quot;</font>);
+    channel.addKid(textInput);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS textinput element
+   *
+   * @param title String textinput title
+   * @param description String textinput description
+   * @param name String textinput name
+   * @param link String textinput link
+   */</i></font>
+  <b>public</b> <b>void</b> setTextInput(String title, String description, String name,
+                           String link) {
+    setTextInput(<b>new</b> TextInput(title, description, name, link));
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS textinput from XmlData
+   *
+   * @param data XmlData data source
+   */</i></font>
+  <b>private</b> <b>void</b> setTextInput(XmlData data) {
+    <b>if</b> (data == <b>null</b>) {
+      channel.removeKids(<font color="#9933CC">&quot;textInput&quot;</font>);
+    }
+    <b>else</b> {
+      setTextInput(data);
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS textinput
+   *
+   * @return TextInput
+   */</i></font>
+  <b>public</b> TextInput getTextInput() {
+    <b>return</b> (TextInput) channel.getKid(<font color="#9933CC">&quot;textInput&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * adds an item to RSS
+   *
+   * @param item Item
+   */</i></font>
+  <b>public</b> <b>void</b> addItem(Item item) {
+    channel.removeKid(getItem(item.getTitle()));
+    channel.addKid(item);
+    itemIndex.put(item.getTitle(), item);
+  }
+
+  <font color="#003399"><i>/**
+   * adds a new item to RSS
+   *
+   * @param title String item title
+   * @param link String item link
+   * @param description String item description
+   */</i></font>
+  <b>public</b> <b>void</b> addItem(String title, String link, String description) {
+    addItem(<b>new</b> Item(title, link, description));
+  }
+
+  <font color="#003399"><i>/**
+   * adds a new item to RSS
+   *
+   * @param data XmlData data source for new item
+   */</i></font>
+  <b>private</b> <b>void</b> addItem(XmlData data) {
+    addItem(<b>new</b> Item(data));
+  }
+
+  <font color="#003399"><i>/**
+   * gets a collection of all items in RSS
+   *
+   * @return Collection all RSS items
+   */</i></font>
+  <b>public</b> Collection getItems() {
+    <b>return</b> channel.getKids(<font color="#9933CC">&quot;item&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS item by title
+   *
+   * @param title String item title to look for
+   * @return Item with specified title, or null if not found
+   *
+   * This should have better been named findItem, but Java tradition suggests using 'get'
+   */</i></font>
+  <b>public</b> Item getItem(String title) {
+    <b>return</b> (Item) itemIndex.get(title);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS generator
+   *
+   * @param generator String
+   */</i></font>
+  <b>public</b> <b>void</b> setGenerator(String generator) {
+    channel.addKid(<b>new</b> BasicXmlData(<font color="#9933CC">&quot;generator&quot;</font>, generator));
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS generator
+   *
+   * @return String generator
+   */</i></font>
+  <b>public</b> String getGenerator() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;generator&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS category
+   *
+   * @param category String
+   */</i></font>
+  <b>public</b> <b>void</b> setCategory(String category) {
+    channel.setKidValue(<font color="#9933CC">&quot;category&quot;</font>, category);
+  }
+
+  <font color="#003399"><i>/**
+   * gets category
+   *
+   * @return String category
+   */</i></font>
+  <b>public</b> String getCategory() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;category&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS TTL (Time-To-Live, number of days RSS is valid)
+   *
+   * @param ttl String
+   */</i></font>
+  <b>public</b> <b>void</b> setTtl(String ttl) {
+    channel.setKidValue(<font color="#9933CC">&quot;ttl&quot;</font>, ttl);
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS TTL (Time-To-Live, number of days RSS is valid)
+   *
+   * @return String RSS TTL
+   */</i></font>
+  <b>public</b> String getTtl() {
+    <b>return</b> channel.getKidValue(<font color="#9933CC">&quot;ttl&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * gets RSS cloud
+   *
+   * @return XmlData cloud (see 2.0 standard for description)
+   */</i></font>
+  <b>public</b> XmlData getCloud() {
+    <b>return</b> channel.getKid(<font color="#9933CC">&quot;cloud&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * sets RSS cloud
+   *
+   * @param cloud XmlData
+   */</i></font>
+  <b>public</b> <b>void</b> setCloud(XmlData cloud) {
+    channel.removeKids(<font color="#9933CC">&quot;cloud&quot;</font>);
+    channel.addKid(cloud);
+  }
+
+  <font color="#003399"><i>/**
+   * finds RSS item by its description
+   *
+   * @param description String
+   * @return Item the first (random) item that has this description, or null
+   */</i></font>
+  <b>public</b> Item findItemByDescription(String description) {
+    String toLookFor = description.trim();
+
+    Collection itemCollection = channel.getKids(<font color="#9933CC">&quot;item&quot;</font>);
+    <b>if</b> (itemCollection == <b>null</b>) {
+      <b>return</b> <b>null</b>;
+    }
+    <b>for</b> (Iterator i = itemCollection.iterator(); i.hasNext(); ) {
+      Item item = (Item) i.next();
+      String itemDescription = item.getDescription();
+      <b>if</b> (toLookFor.equals(itemDescription)) {
+        <b>return</b> item;
+      }
+    }
+    <b>return</b> <b>null</b>;
+  }
+
+  <font color="#003399"><i>/**
+   * finds an item by its guid
+   *
+   * @param guid String
+   * @return Item any item that has this guid, or null if none found
+   */</i></font>
+  <b>public</b> Item findItemByGuid(String guid) {
+    Collection itemCollection = channel.getKids(<font color="#9933CC">&quot;item&quot;</font>);
+    <b>if</b> (itemCollection == <b>null</b>) {
+      <b>return</b> <b>null</b>;
+    }
+    <b>for</b> (Iterator i = itemCollection.iterator(); i.hasNext(); ) {
+      Item item = (Item) i.next();
+      String itemGuid = item.getGuid();
+      <b>if</b> (guid.equals(itemGuid)) {
+        <b>return</b> item;
+      }
+    }
+    <b>return</b> <b>null</b>;
+  }
+
+  <font color="#003399"><i>/**
+   * finds item by its url
+   *
+   * @param url String
+   * @return Item an item that has specified url (or null if none)
+   */</i></font>
+  <b>public</b> Item findItemByUrl(String url) {
+    Collection itemCollection = channel.getKids(<font color="#9933CC">&quot;item&quot;</font>);
+    <b>if</b> (itemCollection == <b>null</b>) {
+      <b>return</b> <b>null</b>;
+    }
+    <b>for</b> (Iterator i = itemCollection.iterator(); i.hasNext(); ) {
+      Item item = (Item) i.next();
+      <b>if</b> (url.equals(item.getSourceUrl()) ||
+          url.equals(item.getEnclosureUrl())) {
+        <b>return</b> item;
+      }
+    }
+    <b>return</b> <b>null</b>;
+  }
+}
+</code></pre>

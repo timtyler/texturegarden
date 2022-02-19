@@ -1,0 +1,90 @@
+!187;s
+A
+SAU0
+SCU0
+S+U0
+SJU0CLASSPATH+=.;\012CLASSPATH=+;%EXTENSION_PATH\\classes\\user;%EXTENSION_PATH\\classes\\system\012CLASSPATH=C:\\Program1\\Java\\JDKs\\Sun\\jre\\lib\\rt.jar;.
+SOU0
+SPU0
+!1555;f
+%	ArrayClearer.java
+%	BitUtils.java
+%	CAProcess2D.java
+%	ColourFunction.java
+%	ColourMap.java
+%	ComplexArray.java
+%	ComplexArray1D.java
+%	ComplexArray2D.java
+%	DiffusionLimitedAggregation.java
+%	Done.java
+%	DragAndDrop.java
+%	Executor.java
+%	FFT1D.java
+%	FFT2D.java
+%	FFTNFP.java
+%	FileLoader.java
+%	FractalDrainage.java
+%	FractalLandscape.java
+%	Function.java
+%	GlobalSettings.java
+%	GUI.java
+%	HeightMap2D.java
+%	HeightMapOperation.java
+%	HeightReader.java
+%	Hortensius32Fast.java
+%	IdleMessage.java
+%	idx_fluid.java
+%	ImageLoader.java
+%	ImageLoadingManager.java
+%	ImageProcessor.java
+%	Instruction.java
+%	InstructionManager.java
+%	IsingModel.java
+%	IsingOperation.java
+%	JUR.java
+%	LiquidCrystal.java
+%	Log.java
+%	MargolusOperation.java
+%	MargolusProcess2D.java
+%	Message.java
+%	MooreOperation.java
+%	MsgCloneTexture.java
+%	MsgCopyTexture.java
+%	MsgNewTexture.java
+%	MsgTextureSelection.java
+%	Mutator.java
+%	PerlinNoise2D.java
+%	PNGReader.java
+%	PNGReader2.java
+%	Pointer.java
+%	Presets.java
+%	Program.java
+%	ProgramParser.java
+%	ProgramProcessor.java
+%	ReactionDiffusion.java
+%	Render.java
+%	ResourceLoader.java
+%	SimpleArray1D.java
+%	SimpleArray2D.java
+%	SquareRoot.java
+%	StringParser.java
+%	StringUtil.java
+%	Texture.java
+%	TextureArray.java
+%	TextureContainer.java
+%	TextureGarden.java
+%	TGCanvas.java
+%	TTAppletFrame.java
+%	TTCanvas.java
+%	TTChoice.java
+%	TTImage.java
+%	TTImageProducer.java
+%	TTMouseAction.java
+%	TTMouseMovement.java
+%	TTNumStr.java
+%	TVCanvas.java
+%	Utils.java
+%	VNOperation.java
+%	Voronoi.java
+%	Water.java
+%	ZipLoader.java

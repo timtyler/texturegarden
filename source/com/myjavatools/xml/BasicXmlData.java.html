@@ -1,0 +1,1195 @@
+<pre class="sourcecode"><code>
+<font color="#003399"><i>/**
+ *
+ * &lt;p&gt;Title: MyJavaTools: XML Data&lt;/p&gt;
+ * &lt;p&gt;Description: Decorated hierarchical Map that stores Xml-like data.&lt;/p&gt;
+ * &lt;p&gt;Copyright: This is public domain;
+ * The right of people to use, distribute, copy or improve the contents of the
+ * following may not be restricted.&lt;/p&gt;
+ *
+ * @author Vlad Patryshev
+ * @see http://www.myjavatools.com/projects/PracticalXML/
+ *
+ * &lt;p&gt;BasicXmlData is a simple container of data usually retrieved from an XML file.
+ * It implements XmlData interface (@see com.myjavatools.XmlData).
+ * It has a type, a value, a map of attributes and a set of kids (nodes) grouped by their types.
+ * Inside a type, kids are arranged as a collection, so that they do have some order.
+ * Kids also implement XmlData.
+ *
+ * &lt;p&gt;Note that the hierarchy is unidirectional: kids have no knowledge of contaners they are members of.
+ * This sounds natural when we talk about containers; files do not know about their current location,
+ * web pages do not generally know their full url - but somehow in DOM it is all different (and this is what makes it hard to handle: parent references).
+ */</i></font>
+
+<b>package</b> com.myjavatools.xml;
+
+<b>import</b> java.io.*;
+<b>import</b> java.lang.reflect.Constructor;
+<b>import</b> java.lang.reflect.InvocationTargetException;
+<b>import</b> java.util.ArrayList;
+<b>import</b> java.util.HashMap;
+<b>import</b> java.util.Iterator;
+<b>import</b> java.util.Map;
+<b>import</b> java.util.Collection;
+
+<b>import</b> org.xml.sax.AttributeList;
+
+<b>public</b> <b>class</b> BasicXmlData <b>implements</b> XmlData
+{
+  <b>public</b> <b>final</b> <b>static</b> <b>Class</b> XmlDataClass = (<b>new</b> BasicXmlData()).getClass();
+  String type = <b>null</b>;
+  String value = <b>null</b>;
+  Map attributes = <b>new</b> HashMap();
+  Map byType = <b>new</b> HashMap();
+
+  <font color="#003399"><i>/**
+   * Default constructor.
+   *
+   * &lt;p&gt;Creates an empty instance.
+   */</i></font>
+  <b>public</b> BasicXmlData() {}
+
+  <font color="#003399"><i>/**
+   * Creates an instance of BasicXmlData of specified type.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   */</i></font>
+  <b>public</b> BasicXmlData(String type) {
+    <b>this</b>();
+    <b>this</b>.type = type;
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance of specified type and with the specified value.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   * @param value the value of data, any string.
+   *
+   * &lt;p&gt;&lt;b&gt;Example&lt;/b&gt;:
+   * &lt;li&gt;&lt;code&gt;new BasicXmlData(&quot;example&quot;, &quot;This is an example&quot;).save(&lt;i&gt;filename&lt;/i&gt;)&lt;/code&gt;
+   * &lt;br&gt;will result in the following output:
+   * &lt;p&gt;&lt;pre&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+   *&amp;lt;example&amp;gt;This is an example&amp;lt;/example&amp;gt;
+   * &lt;/pre&gt;&lt;/li&gt;
+   */</i></font>
+  <b>public</b> BasicXmlData(String type, String value) {
+    <b>this</b>(type);
+    <b>this</b>.value = value;
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance of specified type, with the specified value and
+   * the kids that are listed in the provided collection.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   * @param value the value of data, any string.
+   * @param kids a Collection of XmlData that attach themselves as kids to the instance being created
+   *
+   * &lt;p&gt;&lt;b&gt;Example&lt;/b&gt;:
+   * &lt;li&gt;&lt;code&gt;new BasicXmlData(&quot;example&quot;, &quot;This is an example&quot;,
+   *                       Arrays.asList(new BasicXmlData[] {new BasicXmlData(&quot;subexample&quot;, &quot;This is a kid of example&quot;)}).save(&lt;i&gt;filename&lt;/i&gt;)&lt;/code&gt;
+   * &lt;br&gt;will result in the following output:
+   * &lt;p&gt;&lt;pre&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+   *&amp;lt;example&amp;gt;
+   *  &amp;lt;subexample&amp;gt;This is a kid of example&amp;lt;/subexample&amp;gt;This is an example&amp;lt;/example&amp;gt;
+   * &lt;/pre&gt;&lt;/li&gt;
+   */</i></font>
+  <b>public</b> BasicXmlData(String type, String value, Collection kids) {
+    <b>this</b>(type, value);
+    addKids(kids);
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance of specified type, with the specified value and
+   * the kids that are listed in the provided array.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   * @param value the value of data, any string.
+   * @param kids an array of XmlData that attach themselves as kids to the instance being created
+   *
+   * &lt;p&gt;&lt;b&gt;Example&lt;/b&gt;:
+   * &lt;li&gt;&lt;code&gt;new BasicXmlData(&quot;example&quot;, &quot;This is an example&quot;,
+   *                       new BasicXmlData[] {new BasicXmlData(&quot;subexample&quot;, &quot;This is a kid of example&quot;)}).save(&lt;i&gt;filename&lt;/i&gt;)&lt;/code&gt;
+   * &lt;br&gt;will result in the following output:
+   * &lt;p&gt;&lt;pre&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+   *&amp;lt;example&amp;gt;
+   *  &amp;lt;subexample&amp;gt;This is a kid of example&amp;lt;/subexample&amp;gt;This is an example&amp;lt;/example&amp;gt;
+   * &lt;/pre&gt;&lt;/li&gt;
+   */</i></font>
+  <b>public</b> BasicXmlData(String type, String value, BasicXmlData[] kids) {
+    <b>this</b>(type, value);
+    <b>for</b> (<b>int</b> i = 0; i &lt; kids.length; i++) {
+      addKid(kids[i]);
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance of specified type, with the specified value and
+   * the attributes that are listed in the provided array as name-value pairs.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   * @param value the value of data, any string.
+   * @param attributes an String array of name-value pairs
+   *
+   * &lt;p&gt;&lt;b&gt;Example&lt;/b&gt;:
+   * &lt;li&gt;&lt;code&gt;new BasicXmlData(&quot;example&quot;, &quot;This is an example&quot;, new String[] {&quot;id&quot;, &quot;0123dx&quot;, &quot;name&quot;, &quot;Whittman&quot;}).save(&lt;i&gt;filename&lt;/i&gt;)&lt;/code&gt;
+   * &lt;br&gt;will result in the following output:
+   * &lt;p&gt;&lt;pre&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+   *&amp;lt;example id=&quot;0123dx&quot; name=&quot;Whittman&quot;&amp;gt;This is an example&amp;lt;/example&amp;gt;
+   * &lt;/pre&gt;&lt;/li&gt;
+   */</i></font>
+  <b>public</b> BasicXmlData(String type, String value, String[] attributes) {
+    <b>this</b>(type, value);
+    setAttributes(attributes);
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance of specified type, with the specified value,
+   * attributes that are listed in the provided array as name-value pairs, and
+   * the kids that are listed in the provided collection.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   * @param value the value of data, any string.
+   * @param attributes an String array of name-value pairs
+   * @param kids a Collection of XmlData that attach themselves as kids to the instance being created
+   *
+   * &lt;p&gt;&lt;b&gt;Example&lt;/b&gt;:
+   * &lt;li&gt;&lt;code&gt;new BasicXmlData(&quot;example&quot;, &quot;This is an example&quot;,
+   *                       new String[] {&quot;id&quot;, &quot;007&quot;, &quot;name&quot;, &quot;Bond&quot;},
+   *                       Arrays.asList(new BasicXmlData[] {new BasicXmlData(&quot;subexample&quot;, &quot;This is a kid of example&quot;)}).save(&lt;i&gt;filename&lt;/i&gt;)&lt;/code&gt;
+   * &lt;br&gt;will result in the following output:
+   * &lt;p&gt;&lt;pre&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+   *&amp;lt;example id=&quot;007&quot; name=&quot;Bond&quot;&amp;gt;
+   *  &amp;lt;subexample&amp;gt;This is a kid of example&amp;lt;/subexample&amp;gt;This is an example&amp;lt;/example&amp;gt;
+   * &lt;/pre&gt;&lt;/li&gt;
+   */</i></font>
+  <b>public</b> BasicXmlData(String type, String value, String[] attributes, Collection kids) {
+    <b>this</b>(type, value, kids);
+    setAttributes(attributes);
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance of BasicXmlData of specified type, with the specified value,
+   * attributes that are listed in the provided array as name-value pairs, and
+   * the kids that are listed in the provided array of XmlData.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   * @param value the value of data, any string.
+   * @param attributes an String array of name-value pairs
+   * @param kids an array of XmlData that attach themselves as kids to the instance being created
+   *
+   * &lt;p&gt;&lt;b&gt;Example&lt;/b&gt;:
+   * &lt;li&gt;&lt;code&gt;new BasicXmlData(&quot;example&quot;, &quot;This is an example&quot;,
+   *                       new String[] {&quot;id&quot;, &quot;007&quot;, &quot;name&quot;, &quot;Bond&quot;},
+   *                       new BasicXmlData[] {new BasicXmlData(&quot;subexample&quot;, &quot;This is a kid of example&quot;)}).save(&lt;i&gt;filename&lt;/i&gt;)&lt;/code&gt;
+   * &lt;br&gt;will result in the following output:
+   * &lt;p&gt;&lt;pre&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+   *&amp;lt;example id=&quot;007&quot; name=&quot;Bond&quot;&amp;gt;
+   *  &amp;lt;subexample&amp;gt;This is a kid of example&amp;lt;/subexample&amp;gt;This is an example&amp;lt;/example&amp;gt;
+   * &lt;/pre&gt;&lt;/li&gt;
+   */</i></font>
+  <b>public</b> BasicXmlData(String type, String value, String[] attributes, BasicXmlData []kids) {
+    <b>this</b>(type, value, kids);
+    setAttributes(attributes);
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance of specified type, with the specified value,
+   * attributes that are listed in the provided AttributeList.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   * @param value the value of data, any string.
+   * @param attributes an AttributeList (@see org.xml.sax.AttributeList)
+   */</i></font>
+  <b>public</b> BasicXmlData(String type, String value, AttributeList attributes) {
+    <b>this</b>(type, value);
+    setAttributes(attributes);
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance of specified type, with the specified value,
+   * attributes that are listed in the provided AttributeList, and
+   * the kids that are listed in the provided collection.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   * @param value the value of data, any string.
+   * @param attributes an AttributeList (@see org.xml.sax.AttributeList)
+   * @param kids a Collection of XmlData that attach themselves as kids to the instance being created
+   */</i></font>
+  <b>public</b> BasicXmlData(String type, String value, AttributeList attributes, Collection kids) {
+    <b>this</b>(type, value, kids);
+    setAttributes(attributes);
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance of specified type, with the specified value,
+   * attributes that are listed in the provided AttributeList, and
+   * the kids that are listed in the provided array of XmlData.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   * @param value the value of data, any string.
+   * @param attributes an AttributeList (@see org.xml.sax.AttributeList)
+   * @param kids an array of XmlData that attach themselves as kids to the instance being created
+   */</i></font>
+  <b>public</b> BasicXmlData(String type, String value, AttributeList attributes, BasicXmlData []kids) {
+    <b>this</b>(type, value, kids);
+    setAttributes(attributes);
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance of specified type, with the specified value,
+   * attributes that are listed in the provided map (name -&gt; value), and
+   * the kids that are listed in the provided collection.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   * @param value the value of data, any string.
+   * @param attributes a Map that maps attributes names to values
+   * @param kids a Collection of XmlData that attach themselves as kids to the instance being created
+   */</i></font>
+  <b>public</b> BasicXmlData(String type, String value, Map attributes, Collection kids) {
+    <b>this</b>(type, value, kids);
+    <b>this</b>.attributes = attributes;
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance of specified type, with the specified value,
+   * attributes that are listed in the provided Map (name -&gt; value), and
+   * the kids that are listed in the provided Map, type-&gt;Collection.
+   *
+   * @param type the type of data, an arbitrary identifier string.
+   * @param value the value of data, any string.
+   * @param attributes a Map that maps attributes names to values.
+   * @param byType a Map that maps types to collections of XmlData kids.
+   *
+   * &lt;p&gt;&lt;b&gt;Example&lt;/b&gt;:
+   * &lt;li&gt;&lt;pre&gt;&lt;code&gt;Map attr = new HashMap();
+   * Map byType = new HashMap();
+   * byType.put(&quot;subexample&quot;, Arrays.asList(new Object[] {new BasicXmlData(&quot;subexample&quot;, &quot;This is a kid of example&quot;)}));
+   * byType.put(&quot;feature&quot;, Arrays.asList(new Object[] {new BasicXmlData(&quot;feature&quot;, null, new String[] {&quot;name&quot;, &quot;arity&quot;, &quot;value&quot;, &quot;3&quot;})}));
+   * attr.put(&quot;id&quot;, &quot;008&quot;);
+   * attr.put(&quot;name&quot;, &quot;Dumb&quot;);
+   * new BasicXmlData(&quot;example&quot;, &quot;This is an example&quot;, attr, byType).save(&lt;i&gt;filename&lt;/i&gt;)
+   * &lt;/pre&gt;&lt;/code&gt;
+   * will result in the following output:
+   * &lt;p&gt;&lt;pre&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+   *&amp;lt;example id=&quot;008&quot; name=&quot;Dumb&quot;&amp;gt;
+   *  &amp;lt;subexample&amp;gt;This is a kid of example&amp;lt;/subexample&amp;gt;
+   *  &amp;lt;feature name=&quot;arity&quot; value=&quot;3&quot;&amp;gt;This is an example&amp;lt;/example&amp;gt;
+   * &lt;/pre&gt;
+   * &lt;/li&gt;
+   */</i></font>
+  <b>public</b> BasicXmlData(String type, String value, Map attributes, Map byType) {
+    <b>this</b>(type, value);
+    <b>this</b>.attributes = attributes;
+    <b>this</b>.byType = byType;
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance from another XmlData object (use clone() to get a real deep copy).
+   *
+   * @param org original XmlData
+   */</i></font>
+  <b>public</b> BasicXmlData(XmlData org) {
+    <b>this</b>(org.getType(),
+         org.getValue(),
+         org.getAttributes(),
+         org.getAllKids());
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance from the data read from input stream.
+   *
+   * @param in input stream
+   *
+   * @throws java.io.IOException
+   * @throws java.lang.InstantiationiException
+   */</i></font>
+  <b>public</b> BasicXmlData(InputStream in)
+    <b>throws</b> java.io.IOException,
+           java.lang.InstantiationException {
+    <b>this</b>((<b>new</b> XmlReader(in)).read());
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance from the data read from a file.
+   *
+   * @param in file containing XML data
+   *
+   * @throws java.io.IOException
+   * @throws java.lang.InstantiationiException
+   */</i></font>
+  <b>public</b> BasicXmlData(File in)
+    <b>throws</b> java.io.IOException,
+           java.lang.InstantiationException {
+    <b>this</b>((<b>new</b> XmlReader(in)).read());
+  }
+
+  <b>protected</b> <b>static</b> InputStream getInputStream(java.net.URL url)
+    <b>throws</b> java.io.IOException,
+           java.lang.InstantiationException {
+    InputStream input = <b>null</b>;
+    java.net.URLConnection conn = url.openConnection();
+    conn.connect();
+    Object content = conn.getContent();
+
+<font color="#003399"><i>/*
+    if (!conn.getContentType().endsWith(&quot;xml&quot;)) {
+      throw new java.lang.InstantiationException(&quot;Url &quot; + url +
+                                          &quot; does not provide xml data; it is &quot; +
+                                          conn.getContentType());
+    }
+ */</i></font>
+
+<font color="#003399"><i>//    if (content != null &amp;&amp;</i></font>
+<font color="#003399"><i>//        content instanceof sun.net.www.MeteredStream) {</i></font>
+<font color="#003399"><i>//      input = (sun.net.www.MeteredStream)content;</i></font>
+<font color="#003399"><i>//    }</i></font>
+    input = url.openStream();
+
+    <b>if</b> (input == <b>null</b>) {
+      <b>throw</b> <b>new</b> java.lang.InstantiationException(<font color="#9933CC">&quot;Url &quot;</font> + url +
+                                                 <font color="#9933CC">&quot; does not provide data.&quot;</font>);
+    }
+
+    <b>return</b> input;
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an instance from the data read from URL.
+   *
+   * @param url url pointing to XML data
+   *
+   * @throws java.io.IOException
+   * @throws java.lang.InstantiationiException
+   */</i></font>
+  <b>public</b> BasicXmlData(java.net.URL url)
+    <b>throws</b> java.io.IOException,
+           java.lang.InstantiationException {
+    <b>this</b>(getInputStream(url));
+  }
+
+  <font color="#003399"><i>/**
+   * Sets the contents from another XmlData.
+   *
+   * @param org original XmlData
+   */</i></font>
+  <b>public</b> <b>void</b> setXmlContent(XmlData org) {
+    type = org.getType();
+    value = org.getValue();
+    attributes = org.getAttributes();
+    byType = <b>new</b> HashMap();
+    <b>this</b>.addKids(org.getAllKids());
+  }
+
+  <font color="#003399"><i>/**
+   * Gets the contents of this XmlData (that is, itself).
+   *
+   * @return itself
+   */</i></font>
+  <b>public</b> XmlData getXmlContent() {
+    <b>return</b> <b>this</b>;
+  }
+
+  <font color="#003399"><i>/**
+   * Deep copy of XmlData.
+   *
+   * @return deep copy of itself
+   */</i></font>
+  <b>public</b> XmlData deepCopy() {
+    BasicXmlData result = <b>new</b> BasicXmlData(type,
+                                 value,
+                                 <b>new</b> HashMap(attributes),
+                                 <b>new</b> HashMap());
+    <b>for</b> (Iterator i = getAllKids().iterator(); i.hasNext();) {
+      result.addKid(<b>new</b> BasicXmlData((XmlData)i.next()));
+    }
+    <b>return</b> result;
+  }
+
+  <font color="#003399"><i>/**
+   * Clones of XmlData, same thing as deepCopy.
+   *
+   * @return deep copy of itself
+   */</i></font>
+  <b>public</b> Object clone() {
+    <b>return</b> deepCopy();
+  }
+
+  <font color="#003399"><i>/**
+   * Compares the specified object with this XmlData for equality.
+   * Returns true if the given object is also a XmlData, and the two XmlData
+   * represent the same data. More formally, two XmlDatas t1 and t2 represent
+   * the same data if t1.type.equals(t2.type) and t1.value.equals(t2.value)
+   * and t1.getAttributes.equals(t2.attributes()) and t1.getAllKids().equals(t2.getAllKids()).
+   *
+   * @param o object to be compared for equality with this XmlData.
+   * @return true if the specified object is equal to this XmlData.
+   *
+   * &lt;p&gt;&lt;b&gt;Example&lt;/b&gt;:
+   * &lt;li&gt;
+   * &lt;pre&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+   * &amp;lt;example a1=&quot;v1&quot; a2=&quot;v2&quot;&amp;gt;
+   *   &amp;lt;sub1 ax=&quot;vx&quot; ay=&quot;vy&quot;/&amp;gt;
+   *   &amp;lt;sub2 aa=&quot;va&quot; ab=&quot;vb&quot;/&amp;gt;
+   * &amp;lt;/example&amp;gt;
+   * &lt;/pre&gt;
+   * and
+   * &lt;pre&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+   * &amp;lt;example a2=&quot;v2&quot; a1=&quot;v1&quot;&amp;gt;
+   *   &amp;lt;sub2 ab=&quot;vb&quot; aa=&quot;va&quot;/&amp;gt;
+   *   &amp;lt;sub1 ay=&quot;vy&quot; ax=&quot;vx&quot;/&amp;gt;
+   * &amp;lt;/example&amp;gt;
+   * &lt;/pre&gt;
+   * are equal.
+   * &lt;/li&gt;
+   */</i></font>
+  <b>public</b> <b>boolean</b> equals(Object o) {
+    <b>if</b> (o == <b>null</b>) <b>return</b> <b>false</b>;
+    <b>if</b> (!(o <b>instanceof</b> BasicXmlData)) <b>return</b> <b>false</b>;
+
+    BasicXmlData other = (BasicXmlData)o;
+
+    <b>if</b> (!other.type.equals(type))  <b>return</b> <b>false</b>;
+    <b>if</b> (!other.value.equals(value)) <b>return</b> <b>false</b>;
+
+    <b>if</b> (!other.attributes.equals(attributes)) <b>return</b> <b>false</b>;
+    <b>if</b> (!other.byType.equals(byType)) <b>return</b> <b>false</b>;
+
+    <b>return</b> <b>true</b>;
+  }
+
+  <font color="#003399"><i>/**
+   * Saves XmlData to a file.
+   *
+   * @param filename name of the file to write to
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> <b>void</b> save(String filename)
+    <b>throws</b> java.io.IOException {
+    XmlWriter.write(filename, <b>this</b>);
+  }
+
+  <font color="#003399"><i>/**
+   * Saves XmlData to a file.
+   *
+   * @param file file to write to
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> <b>void</b> save(File file)
+    <b>throws</b> java.io.IOException {
+    XmlWriter.write(file, <b>this</b>);
+  }
+
+  <font color="#003399"><i>/**
+   * Saves XmlData to an output stream.
+   *
+   * @param os output stream to write to
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> <b>void</b> save(OutputStream os)
+    <b>throws</b> java.io.IOException {
+    XmlWriter.write(os, <b>this</b>);
+  }
+
+  <font color="#003399"><i>/**
+   * Sets an attribute value.
+   *
+   * @param name attribute name
+   * @param value attribute value
+   */</i></font>
+  <b>public</b> <b>void</b> setAttribute(String name, String value) {
+    attributes.put(name, value);
+  }
+
+  <font color="#003399"><i>/**
+   * Sets attributes from an array of name-value pairs.
+   *
+   * @param attributes a String array consisting of name-value pairs.
+   */</i></font>
+  <b>public</b> <b>void</b> setAttributes(String[] attributes) {
+    <b>for</b> (<b>int</b> i = 0; i &lt; attributes.length; i+=2) {
+      setAttribute(attributes[i], attributes[i+1]);
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Sets attributes from a Map.
+   *
+   * @param attributes a Map, name -&gt; value.
+   */</i></font>
+  <b>public</b> <b>void</b> setAttributes(Map attributes) {
+    <b>for</b> (Iterator i = attributes.entrySet().iterator(); i.hasNext();) {
+      Map.Entry entry = (Map.Entry)i.next();
+      <b>this</b>.attributes.put(entry.getKey(), entry.getValue());
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Sets attributes from an AttributeList.
+   *
+   * @param attributes AttributeList
+   */</i></font>
+  <b>public</b> <b>void</b> setAttributes(AttributeList attributes) {
+    <b>for</b> (<b>int</b> i = 0; i &lt; attributes.getLength(); i++) {
+      setAttribute(attributes.getName(i), attributes.getValue(i));
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Gets a Map of attributes.
+   *
+   * @return a Map that maps attribute names to attribute values, all Strings
+   */</i></font>
+  <b>public</b> Map getAttributes() {
+    <b>return</b> attributes;
+  }
+
+  <font color="#003399"><i>/**
+   * Gets XmlData type, which is just a String.
+   *
+   * @return the type string
+   */</i></font>
+  <b>public</b> String getType() {
+    <b>return</b> type;
+  }
+
+  <font color="#003399"><i>/**
+   * Gets a value of XmlData, which is just a String.
+   *
+   * @return the value
+   */</i></font>
+  <b>public</b> String getValue() {
+    <b>return</b> value;
+  }
+
+  <font color="#003399"><i>/**
+   * Sets the value of XmlData.
+   *
+   * @param v new value for XmlData
+   *
+   * @return itself
+   */</i></font>
+  <b>public</b> XmlData setValue(String v) {
+    value = v == <b>null</b> ? v : <b>new</b> String(v);
+    <b>return</b> <b>this</b>;
+  }
+
+  <font color="#003399"><i>/**
+   * Gets the value of a specified attribute.
+   *
+   * @param name attribute name
+   * @return attribute value
+   */</i></font>
+  <b>public</b> String getAttribute(String name) {
+    <b>return</b> (String)attributes.get(name);
+  }
+
+  <font color="#003399"><i>/**
+   * Gets the value of a specified attribute; if there is none, returns default value.
+   *
+   * @param name attribute name
+   * @param defaultValue
+   * @return attribute value or defaultValue
+   */</i></font>
+  <b>public</b> String getAttribute(String name, String defaultValue) {
+    String result = (String)attributes.get(name);
+    <b>return</b> (result == <b>null</b>) ? defaultValue : result;
+  }
+
+  <font color="#003399"><i>/**
+   * Gets the name of XmlData, which is the value of attribute &quot;name&quot;.
+   *
+   * &lt;p&gt; Same thing as &lt;code&gt;getAttribute(&quot;name&quot;)&lt;/code&gt;.
+   *
+   * @return the name string
+   */</i></font>
+  <b>public</b> String getName() {
+    <b>return</b> getAttribute(<font color="#9933CC">&quot;name&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * Gets the id of XmlData, which is the value of attribute &quot;id&quot;.
+   *
+   * &lt;p&gt; Same thing as &lt;code&gt;getAttribute(&quot;id&quot;)&lt;/code&gt;.
+   *
+   * @return the id string
+   */</i></font>
+  <b>public</b> String getId() {
+    <b>return</b> getAttribute(<font color="#9933CC">&quot;id&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * Gets a collection of all kids of XmlData. Normally you would not need it;
+   * retrieving kids by type is what one normally does, but you never know...
+   *
+   * @return a Collection of XmlData that contains all kids
+   */</i></font>
+  <b>public</b> Collection getAllKids() {
+    ArrayList kids = <b>new</b> ArrayList();
+
+    <b>for</b> (Iterator list = byType.entrySet().iterator();
+                  list.hasNext();) {
+      kids.addAll((Collection)((Map.Entry)list.next()).getValue());
+    }
+
+    <b>return</b> kids;
+  }
+
+  <font color="#003399"><i>/**
+   * Gets a Collection of kids of specified type.
+   *
+   * @param type type of the kids to choose
+   * @return all kids that have specified type
+   */</i></font>
+  <b>public</b> Collection getKids(String type) {
+    <b>return</b> (Collection)byType.get(type);
+  }
+
+  <b>protected</b> <b>void</b> setKids(String type, Collection kids) {
+    byType.put(type, kids);
+  }
+
+  <font color="#003399"><i>/**
+   * Gets the number of kids of specified type.
+   *
+   * @param type
+   * @return the number of such kids
+   */</i></font>
+  <b>public</b> <b>int</b> getKidCount(String type) {
+    Collection kids = getKids(type);
+    <b>return</b> (kids == <b>null</b>) ? 0 : kids.size();
+  }
+
+  <font color="#003399"><i>/**
+   * Gets a kid of specified type, if any.
+   *
+   * @param type type of the kid to chose
+   * @return any kid that has this type or null if there is no such kid
+   */</i></font>
+  <b>public</b> XmlData getKid(String type) {
+    Collection kids = getKids(type);
+
+    <b>if</b> (kids == <b>null</b>) <b>return</b> <b>null</b>;
+
+    <b>return</b> (kids.size() &gt; 0) ? ((BasicXmlData)kids.iterator().next()) : <b>null</b>;
+  }
+
+  <font color="#003399"><i>/**
+   * Gets the value of a kid of specified type, if any.
+   *
+   * @param type
+   * @return the value of a kid of specified type or null if there's none
+   */</i></font>
+  <b>public</b> String getKidValue(String type) {
+    XmlData kid = getKid(type);
+    <b>return</b> (kid == <b>null</b>) ? <b>null</b> : kid.getValue();
+  }
+
+  <font color="#003399"><i>/**
+   * Gets a kid of specified type that has an attribute with a specified value.
+   *
+   * @param type type of the kid to choose
+   * @param attribute attribute name
+   * @param value attribute value
+   * @return such a kid, if found, or null otherwise
+   */</i></font>
+  <b>public</b> XmlData getKid(String type, String attribute, String value) {
+    Collection kids = getKids(type);
+
+    <b>if</b> (kids == <b>null</b>) <b>return</b> <b>null</b>;
+
+    <b>for</b> (Iterator i = kids.iterator(); i.hasNext();) {
+      BasicXmlData kid = (BasicXmlData)i.next();
+      String attr = kid.getAttribute(attribute);
+      <b>if</b> (attr != <b>null</b> &amp;&amp; attr.equals(value)) <b>return</b> kid;
+    }
+    <b>return</b> <b>null</b>;
+  }
+
+  <font color="#003399"><i>/**
+   * Gets a kid having specified type and specified id.
+   *
+   * @param type kid type
+   * @param id kid id
+   * @return a kid of specified type that has the value named &quot;id&quot; equal to id
+   */</i></font>
+  <b>public</b> XmlData getKid(String type, String id) {
+    <b>return</b> getKid(type, <font color="#9933CC">&quot;id&quot;</font>, id);
+  }
+
+  <font color="#003399"><i>/**
+   * Adds a kid to the set of kids.
+   *
+   * @param kid kid to add
+   * @return the kid
+   */</i></font>
+  <b>public</b> XmlData addKid(XmlData kid) {
+    <b>if</b> (kid == <b>null</b>) <b>return</b> kid;
+
+    String type = kid.getType();
+    Collection slot = getKids(type);
+
+    <b>if</b> (slot == <b>null</b>)
+      byType.put(type, (slot = <b>new</b> ArrayList()));
+
+    slot.add(kid);
+    <b>return</b> kid;
+  }
+
+  <font color="#003399"><i>/**
+   * Removes a kid from the set of kids.
+   *
+   * @param kid kid to remove
+   */</i></font>
+  <b>public</b> <b>void</b> removeKid(XmlData kid) {
+    String type = kid.getType();
+    Collection slot = getKids(type);
+    <b>if</b> (slot != <b>null</b>) {
+      slot.remove(kid);
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Adds all XmlData elements from given Collection to the set of kids,
+   * skipping elements that are not XmlData.
+   *
+   * @param kids
+   */</i></font>
+  <b>public</b> <b>void</b> addKids(Collection kids) {
+    <b>for</b> (Iterator i = kids.iterator(); i.hasNext();) {
+      Object next = i.next();
+      <b>if</b> (next <b>instanceof</b> BasicXmlData) {
+        addKid( (BasicXmlData) next);
+      }
+    }
+    trim();
+  }
+
+  <font color="#003399"><i>/**
+   * Removes all kids of given type.
+   *
+   * @param type type of kids to remove
+   * @return Collection of removed kids
+   */</i></font>
+  <b>public</b> Collection removeKids(String type) {
+    <b>return</b> (Collection)byType.remove(type);
+  }
+
+  <font color="#003399"><i>/**
+   *
+   * &lt;p&gt;Class Policy defines three different casting policies.
+   */</i></font>
+
+  <b>public</b> <b>static</b> <b>class</b> Policy {
+    <b>private</b> Policy() {};
+
+    <font color="#003399"><i>/**
+     * Policy SKIP_ON_ERROR causes casting to ignore nodes that failed to cast.
+     */</i></font>
+    <b>public</b> <b>final</b> <b>static</b> Policy SKIP_ON_ERROR = <b>new</b> Policy();
+
+    <font color="#003399"><i>/**
+     * Policy KEEP_ON_ERROR causes casting to keep intact nodes that failed to cast.
+     */</i></font>
+    <b>public</b> <b>final</b> <b>static</b> Policy KEEP_ON_ERROR = <b>new</b> Policy();
+
+    <font color="#003399"><i>/**
+     * Policy THROW_ON_ERROR causes casting to throw any exception that happens while casting a node.
+     */</i></font>
+    <b>public</b> <b>final</b> <b>static</b> Policy THROW_ON_ERROR = <b>new</b> Policy();
+  }
+
+  <font color="#003399"><i>/**
+   * Casts kids of specified type to a specified class (actually replacing them with the new instances).
+   *
+   * @param type type of the kids to cast
+   * @param clazz class to cast to
+   * @return true in case of success, false if casting failed somehow
+   *
+   * To cast, the class has to have a constructor that takes XmlData as the only argument
+   */</i></font>
+  <b>public</b> <b>boolean</b> castKids(String type, <b>Class</b> clazz) {
+    <b>try</b> {
+      Constructor constructor = clazz.getConstructor(<b>new</b> <b>Class</b>[] {XmlDataClass});
+
+      Collection oldKids = getKids(type);
+      Collection newKids = <b>new</b> ArrayList();
+
+      <b>for</b> (Iterator i = oldKids.iterator(); i.hasNext();) {
+        BasicXmlData oldKid = (BasicXmlData)i.next();
+        BasicXmlData newKid = (BasicXmlData)constructor.newInstance(<b>new</b> Object[] {oldKid} );
+        newKids.add(newKid);
+      }
+      setKids(type, newKids);
+      <b>return</b> <b>true</b>;
+    } <b>catch</b> (Exception e) {
+      <b>return</b> <b>false</b>;
+    }
+  }
+
+  <b>protected</b> XmlData cast(<b>Class</b> clazz) <b>throws</b>
+      SecurityException, NoSuchMethodException, InvocationTargetException,
+      IllegalArgumentException, IllegalAccessException, InstantiationException {
+    Constructor constructor = clazz.getConstructor(<b>new</b> <b>Class</b>[] {
+        XmlDataClass});
+    <b>return</b> (XmlData) constructor.newInstance(<b>new</b> Object[] {<b>this</b>});
+  }
+
+  <b>protected</b> <b>static</b> XmlData cast(XmlData object, Map typemap, Policy policy)
+      <b>throws</b> InstantiationException, NoSuchMethodException, InvocationTargetException,
+      IllegalArgumentException, IllegalAccessException {
+    <b>if</b> (object <b>instanceof</b> BasicXmlData) {
+      <b>return</b> ((BasicXmlData)object).cast(typemap, policy);
+    } <b>else</b> <b>if</b> (policy == Policy.THROW_ON_ERROR) {
+      <b>throw</b> <b>new</b> InstantiationException(<font color="#9933CC">&quot;class &quot;</font> + object.getClass() + <font color="#9933CC">&quot; does not support casting&quot;</font>);
+    } <b>else</b> {
+      <b>return</b> policy == Policy.KEEP_ON_ERROR ? object : <b>null</b>;
+    }
+  }
+
+  <b>protected</b> <b>static</b> XmlData cast(XmlData object, String packageName, Policy policy)
+      <b>throws</b> InstantiationException, NoSuchMethodException, InvocationTargetException,
+      IllegalArgumentException, IllegalAccessException, ClassNotFoundException {
+    <b>if</b> (object <b>instanceof</b> BasicXmlData) {
+      <b>return</b> ((BasicXmlData)object).cast(packageName, policy);
+    } <b>else</b> <b>if</b> (policy == Policy.THROW_ON_ERROR) {
+      <b>throw</b> <b>new</b> InstantiationException(<font color="#9933CC">&quot;class &quot;</font> + object.getClass() + <font color="#9933CC">&quot; does not support casting&quot;</font>);
+    } <b>else</b> {
+      <b>return</b> policy == Policy.KEEP_ON_ERROR ? object : <b>null</b>;
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Casts XmlData and its kids, recursively, to specified classes, according to the typemap.
+   *
+   * @param typemap maps types to classes. Type is what XmlData considers a type:
+   * a string value of type property.
+   * @param policy one of the following: Policy.THROW_ON_ERROR (causes an exception
+   * in case of any error), Policy.KEEP_ON_ERROR (keeps nodes that cannot be cast),
+   * Policy.SKIP_ON_ERROR (ignores nodes that cannot be cast).
+   *
+   * @return a new instance of the class corresponding, via typemap, to the type of data.
+
+   * @throws InstantiationException
+   * @throws NoSuchMethodException
+   * @throws InvocationTargetException
+   * @throws IllegalArgumentException
+   * @throws IllegalAccessException
+   * Exception are thrown only if policy is Policy.THROW_ON_ERROR
+   */</i></font>
+
+  <b>public</b> XmlData cast(Map typemap, Policy policy)
+      <b>throws</b> InstantiationException, NoSuchMethodException, InvocationTargetException,
+      IllegalArgumentException, IllegalAccessException {
+    <b>for</b> (Iterator i = getAllKids().iterator(); i.hasNext(); ) {
+      XmlData oldKid = (XmlData) i.next();
+      XmlData newKid = oldKid <b>instanceof</b> BasicXmlData ? ((BasicXmlData)oldKid).cast(typemap, policy) : oldKid;
+      <b>if</b> (newKid != <b>null</b>) {
+        removeKid(oldKid);
+        addKid(newKid);
+      }
+    }
+
+    <b>if</b> (policy == Policy.THROW_ON_ERROR) {
+      <b>return</b> cast((<b>Class</b>)typemap.get(getType()));
+    } <b>else</b> {
+      <b>try</b> {
+        <b>return</b> cast((<b>Class</b>)typemap.get(getType()));
+      } <b>catch</b> (Exception e) {
+        <b>return</b> policy == Policy.KEEP_ON_ERROR ? <b>this</b> : <b>null</b>;
+      }
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Casts XmlData and its kids, recursively, to classes in specified package.
+   *
+   * @param packageName the name of the package for casting. XmlData types
+   * are mapped to classes with the same name inside specified package.
+   * packageName can be null: then it is ignored.
+   * @param policy one of the following: Policy.THROW_ON_ERROR (causes an exception
+   * in case of any error), Policy.KEEP_ON_ERROR (keeps nodes that cannot be cast),
+   * Policy.SKIP_ON_ERROR (ignores nodes that cannot be cast).
+   *
+   * @return a new instance of the class which name is the type of the data
+   * @throws InstantiationException
+   * @throws NoSuchMethodException
+   * @throws InvocationTargetException
+   * @throws IllegalArgumentException
+   * @throws IllegalAccessException
+   * @throws ClassNotFoundException
+   * Exception are thrown only if policy is Policy.THROW_ON_ERROR
+   */</i></font>
+  <b>public</b> XmlData cast(String packageName, Policy policy)
+      <b>throws</b> InstantiationException, NoSuchMethodException, InvocationTargetException,
+      IllegalArgumentException, IllegalAccessException, ClassNotFoundException {
+    <b>for</b> (Iterator i = getAllKids().iterator(); i.hasNext();) {
+      XmlData oldKid = (XmlData)i.next();
+      XmlData newKid = cast(oldKid, packageName, policy);
+      <b>if</b> (newKid != <b>null</b>) {
+        removeKid(oldKid);
+        addKid(newKid);
+      }
+    }
+    String className = packageName == <b>null</b> ? <font color="#9933CC">&quot;&quot;</font> : (packageName + <font color="#9933CC">&quot;.&quot;</font>) +
+                                  getType();
+
+    <b>if</b> (policy == Policy.THROW_ON_ERROR) {
+      <b>return</b> cast(<b>Class</b>.forName(className));
+    } <b>else</b> {
+      <b>try</b> {
+        <b>return</b> cast(<b>Class</b>.forName(className));
+      } <b>catch</b> (Exception e) {
+        <b>return</b> policy == Policy.KEEP_ON_ERROR ? <b>this</b> : <b>null</b>;
+      }
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Tries to trim the set of kids, so that there are no spare slots left.
+   * &lt;p&gt;This operation does not go deep, since it is assumed that you apply it in the process
+   * of building XmlData, and the kids are already trimmed.
+   */</i></font>
+  <b>public</b> <b>void</b> trim() {
+    <b>for</b> (Iterator list = byType.entrySet().iterator();
+                  list.hasNext();) {
+      Object candidate = ((Map.Entry)list.next()).getValue();
+      <b>if</b> (candidate <b>instanceof</b> ArrayList) {
+        ((ArrayList)candidate).trimToSize();
+      }
+    }
+  }
+
+  <font color="#003399"><i>/**
+   *
+   * &lt;p&gt;An abstract class that stores an expression used in XmlData search/filtering.&lt;/p&gt;
+   */</i></font>
+
+    <b>public</b> <b>static</b> <b>abstract</b> <b>class</b> Expression <b>implements</b> Condition {
+
+      <font color="#003399"><i>/**
+       * Parses a string containing search/selection condition.
+       * &lt;p&gt;A condition consist of disjunctions of conjunctions of comparisons.
+       * Comparisons compare a node's type, value or attribute value to a string constant.
+       *
+       * @param source the expression to be parsed
+       * @return the internal (tree) representation of expression
+       */</i></font>
+    <b>public</b> <b>static</b> Expression parse(String source) {
+      <b>return</b> source == <b>null</b> ? <b>null</b> :
+             Disjunction.parseDisjunction(source);
+    };
+
+    <b>private</b> <b>static</b> <b>class</b> Comparison <b>extends</b> Expression {
+      <b>static</b> <b>final</b> <b>int</b> OP_NOP = 0;
+      <b>static</b> <b>final</b> <b>int</b> OP_EQ  = 1;
+      <b>static</b> <b>final</b> <b>int</b> OP_NE  = 2;
+      String name;
+      String value;
+      <b>int</b> op;
+
+      Comparison(String name, String op, String value) {
+        <b>this</b>.name  = name;
+        <b>this</b>.op    = op.equals(<font color="#9933CC">&quot;==&quot;</font>) ? OP_EQ :
+                     op.equals(<font color="#9933CC">&quot;=&quot;</font>)  ? OP_EQ :
+                     op.equals(<font color="#9933CC">&quot;!=&quot;</font>) ? OP_NE :
+                                       OP_NOP;
+        <b>this</b>.value = value;
+      }
+
+      <b>static</b> Comparison parseComparison(String expression) {
+        <b>int</b> n0 = 0;
+        <b>while</b> (n0 &lt; expression.length() &amp;&amp; expression.charAt(n0) == <font color="#9933CC">' '</font>) n0++;
+        <b>if</b> (n0 &gt;= expression.length()) <b>return</b> <b>null</b>;
+        <b>int</b> n1 = n0+1;
+        <b>while</b> (n1 &lt; expression.length() &amp;&amp; expression.charAt(n1) != <font color="#9933CC">' '</font>) n1++;
+        <b>if</b> (n1 &gt;= expression.length()) <b>return</b> <b>null</b>;
+
+        String name = (expression.charAt(n0) == <font color="#9933CC">'&quot;'</font>)     ?
+                        expression.substring(n0+1, n1-1) :
+                        expression.substring(n0,   n1);
+        <b>int</b> o0 = n1+1;
+        <b>while</b> (o0 &lt; expression.length() &amp;&amp; expression.charAt(o0) == <font color="#9933CC">' '</font>) o0++;
+        <b>if</b> (o0 &gt;= expression.length()) <b>return</b> <b>null</b>;
+        <b>int</b> o1 = o0+1;
+        <b>while</b> (o1 &lt; expression.length() &amp;&amp; expression.charAt(o1) != <font color="#9933CC">' '</font>) o1++;
+        <b>if</b> (o1 &gt;= expression.length()) <b>return</b> <b>null</b>;
+        String op = expression.substring(o0, o1);
+        <b>int</b> v0 = o1+1;
+        <b>while</b> (v0 &lt; expression.length() &amp;&amp; expression.charAt(v0) != <font color="#9933CC">'&quot;'</font>) v0++;
+        <b>if</b> (v0 &gt;= expression.length()) <b>return</b> <b>null</b>;
+        <b>int</b> v1 = v0+1;
+        <b>while</b> (v1 &lt; expression.length() &amp;&amp; expression.charAt(v1) != <font color="#9933CC">'&quot;'</font>) v1++;
+        <b>if</b> (v1 &gt;= expression.length()) <b>return</b> <b>null</b>;
+        String value = expression.substring(v0+1, v1);
+        <b>return</b> <b>new</b> Comparison(name, op, value);
+      }
+
+      <b>public</b> <b>boolean</b> satisfies(XmlData entity) {
+        String toCompare = name.equals(<font color="#9933CC">&quot;.&quot;</font>) ? entity.getValue() :
+                           name.equals(<font color="#9933CC">&quot;:&quot;</font>) ? entity.getType()  :
+                           entity.getAttribute(name);
+        <b>return</b> (op == OP_EQ) ?  value.equals(toCompare) :
+               (op == OP_NE) ? !value.equals(toCompare) : <b>false</b>;
+      }
+    }
+
+    <b>private</b> <b>static</b> <b>class</b> Conjunction <b>extends</b> Expression {
+      Comparison[] comparisons;
+
+      Conjunction(ArrayList comparisonList) {
+
+        comparisons = (Comparison[])comparisonList.toArray(
+                        <b>new</b> Comparison[comparisonList.size()]);
+      }
+
+      <b>static</b> Conjunction parseConjunction(String expression) {
+        ArrayList comparisonList = <b>new</b> ArrayList();
+        <b>boolean</b> inQuote = <b>false</b>;
+        <b>int</b> last = expression.length();
+        <b>for</b> (<b>int</b> i = 0; i &lt; expression.length(); i = last+1) {
+          <b>for</b> (last = i; last &lt; expression.length(); last++) {
+            <b>char</b> c = expression.charAt(last);
+            <b>if</b> (c == <font color="#9933CC">'&quot;'</font>) {
+              inQuote = !inQuote;
+            } <b>else</b> <b>if</b> (!inQuote &amp;&amp; c == <font color="#9933CC">'&amp;'</font>) {
+              <b>break</b>;
+            }
+          }
+          Comparison comparison = Comparison.parseComparison(expression.substring(i, last));
+          <b>if</b> (comparison != <b>null</b>)
+            comparisonList.add(comparison);
+        }
+        <b>return</b> <b>new</b> Conjunction(comparisonList);
+      }
+
+      <b>public</b> <b>boolean</b> satisfies(XmlData entity) {
+        <b>for</b> (<b>int</b> i = 0; i &lt; comparisons.length; i++) {
+          <b>if</b> (!comparisons[i].satisfies(entity)) {
+            <b>return</b> <b>false</b>;
+          }
+        }
+        <b>return</b> <b>true</b>;
+      }
+    }
+
+    <b>private</b> <b>static</b> <b>class</b> Disjunction <b>extends</b> Expression {
+      Conjunction[] conjunctions;
+
+      Disjunction(java.util.ArrayList conjunctionList) {
+        conjunctions = (Conjunction[])conjunctionList.toArray(
+                        <b>new</b> Conjunction[conjunctionList.size()]);
+      }
+
+      <b>static</b> Disjunction parseDisjunction(String expression) {
+        ArrayList conjunctionList = <b>new</b> ArrayList();
+        <b>boolean</b> inQuote = <b>false</b>;
+        <b>int</b> last = expression.length();
+        <b>for</b> (<b>int</b> i = 0; i &lt; expression.length(); i = last+1) {
+          <b>for</b> (last = i; last &lt; expression.length(); last++) {
+            <b>char</b> c = expression.charAt(last);
+            <b>if</b> (c == <font color="#9933CC">'&quot;'</font>) {
+              inQuote = !inQuote;
+            } <b>else</b> <b>if</b> (!inQuote &amp;&amp; c == <font color="#9933CC">'|'</font>) {
+              <b>break</b>;
+            }
+          }
+          Conjunction conjunction = Conjunction.parseConjunction(expression.substring(i, last));
+          <b>if</b> (conjunction != <b>null</b>)
+            conjunctionList.add(conjunction);
+        }
+        <b>return</b> <b>new</b> Disjunction(conjunctionList);
+      }
+
+      <b>public</b> <b>boolean</b> satisfies(XmlData entity) {
+        <b>for</b> (<b>int</b> i = 0; i &lt; conjunctions.length; i++) {
+          <b>if</b> (conjunctions[i].satisfies(entity)) {
+            <b>return</b> <b>true</b>;
+          }
+        }
+        <b>return</b> <b>false</b>;
+      }
+    }
+
+    <b>public</b> <b>abstract</b> <b>boolean</b> satisfies(XmlData entity);
+  }
+
+  <font color="#003399"><i>/**
+   * Checks whether this XmlData node satisfies given condition.
+   *
+   * @param condition
+   * @return true if it does satisfy the condition, false otherwise. Any node satisfies an empty condition.
+   * This can look arguable, but you have to believe it, it comes from logic.
+   */</i></font>
+  <b>public</b> <b>boolean</b> satisfies(Condition condition) {
+    <b>return</b> condition == <b>null</b> ? <b>true</b> : condition.satisfies(<b>this</b>);
+  }
+
+  <font color="#003399"><i>/**
+   * Checks whether this XmlData node satisfies given expression (presented as string).
+   * &lt;p&gt; the string is parsed first, and then the node is checked against the parsed expression.
+   *
+   * @param expression
+   * @return true if it does satisfy the expression, false otherwise. Note that if
+   * the expression is void or invalid, any node satisfies this expression.
+   */</i></font>
+  <b>public</b> <b>boolean</b> satisfies(String expression) {
+    <b>return</b> satisfies(Expression.parse(expression));
+  }
+
+  <font color="#003399"><i>/**
+   * Selects a subtree from XmlData, that is, the tree of those nodes that satisfy a condition.
+   *
+   * &lt;p&gt; The node is included into the resulting tree iff it satisfies the condition;
+   * this filtering operation is applied recursively to its kids.
+   *
+   * @param condition
+   * @return XmlData containing only nodes that satisfy the filter
+   */</i></font>
+  <b>public</b> XmlData selectTree(Condition condition) {
+    <b>if</b> (condition == <b>null</b>) <b>return</b> <b>this</b>;
+    <b>if</b> (!condition.satisfies(<b>this</b>)) <b>return</b> <b>null</b>;
+
+    ArrayList goodKids = <b>new</b> ArrayList();
+    <b>for</b> (Iterator i = getAllKids().iterator(); i.hasNext();) {
+      XmlData candidate = ((XmlData)i.next()).selectTree(condition);
+      <b>if</b> (candidate != <b>null</b>) goodKids.add(candidate);
+    }
+
+    <b>return</b> <b>new</b> BasicXmlData(type, value, attributes, goodKids);
+  }
+
+  <font color="#003399"><i>/**
+   * Selects a subtree from XmlData, that is, the tree of those nodes that satisfy a condition.
+   *
+   * &lt;p&gt; The node is included into the resulting tree iff it satisfies the condition;
+   * this filtering operation is applied recursively to its kids.
+   *
+   * @param expression the string that contains a filtering expression
+   * @return XmlData containing only nodes that satisfy the expression
+   *
+   * &lt;p&gt;&lt;b&gt;Example&lt;/b&gt;:
+   * &lt;li&gt;for the following data:
+   * &lt;br&gt;&lt;pre&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+   * &amp;lt;example a1=&quot;v1&quot; a2=&quot;v2&quot;&amp;gt;
+   *   &amp;lt;sub1 ax=&quot;vx&quot; ay=&quot;vy&quot;/&amp;gt;
+   *   &amp;lt;sub2 aa=&quot;va&quot; ab=&quot;vb&quot;/&amp;gt;
+   * &amp;lt;/example&amp;gt;
+   * &lt;/pre&gt;
+   * &lt;code&gt;selectTree(&quot;ax != &#92&quot;vx&#92&quot;&quot;)&lt;/code&gt; and
+   * &lt;br&gt;&lt;code&gt;selectTree(&quot;a1 == &#92&quot;v1&#92&quot; || ab == &#92&quot;vb&#92&quot;&quot;)&lt;/code&gt;
+   * &lt;br&gt; will select the same subtree,
+   * &lt;br&gt;&lt;pre&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&amp;gt;
+   * &amp;lt;example a1=&quot;v1&quot; a2=&quot;v2&quot;&amp;gt;
+   *   &amp;lt;sub2 aa=&quot;va&quot; ab=&quot;vb&quot;/&amp;gt;
+   * &amp;lt;/example&amp;gt;
+   * &lt;/pre&gt;
+   *
+   * &lt;/li&gt;
+   */</i></font>
+
+  <b>public</b> XmlData selectTree(String expression) {
+    <b>return</b> selectTree(Expression.parse(expression));
+  }
+}
+</code></pre>

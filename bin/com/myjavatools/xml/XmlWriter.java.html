@@ -1,0 +1,568 @@
+<pre class="sourcecode"><code>
+<font color="#003399"><i>/**
+ *
+ * &lt;p&gt;Title: MyJavaTools: XML Writer&lt;/p&gt;
+ * &lt;p&gt;Description: Writes XmlData.&lt;/p&gt;
+ * &lt;p&gt;Copyright: This is public domain;
+ * The right of people to use, distribute, copy or improve the contents of the
+ * following may not be restricted.&lt;/p&gt;
+ *
+ * @author Vlad Patryshev
+ * @see http://www.w3.org/TR/REC-xml#sec-intro
+ */</i></font>
+
+<b>package</b> com.myjavatools.xml;
+
+<b>import</b> java.util.*;
+<b>import</b> java.io.*;
+<font color="#003399"><i>//import com.myjavatools.lib.Tools;</i></font>
+
+<b>public</b> <b>class</b> XmlWriter <b>extends</b> Writer
+{
+  <b>protected</b> <b>final</b> Writer writer;
+  <b>protected</b> String prefix  = <font color="#9933CC">&quot;&quot;</font>;
+  <b>protected</b> Stack Elements = <b>new</b> Stack();
+  <b>protected</b> <b>boolean</b> isEmpty;
+
+  XmlWriter() {
+    <b>super</b>();
+    writer = <b>this</b>;
+  }
+
+  XmlWriter(Object lock) {
+    <b>super</b>(lock);
+    writer = <b>this</b>;
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an XmlWriter from a Writer, using specified encoding.
+   *
+   * @param out the original writer
+   * @param encoding encoding to use
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> XmlWriter(Writer out, String encoding) <b>throws</b> java.io.IOException {
+    <b>super</b>();
+    writer = out;
+    <b>int</b> utfthere = encoding.indexOf(<font color="#9933CC">&quot;UTF&quot;</font>);
+    <b>if</b> (utfthere &gt;= 0 &amp;&amp; encoding.indexOf(<font color="#9933CC">&quot;UTF-&quot;</font>) &lt; 0) {
+      encoding = <font color="#9933CC">&quot;UTF-&quot;</font> + encoding.substring(3);
+    }
+    write(<font color="#9933CC">&quot;&lt;?xml version=&#92&quot;</font>1.0&#92<font color="#9933CC">&quot; encoding=&#92&quot;</font><font color="#9933CC">&quot; + encoding + &quot;</font>&#92<font color="#9933CC">&quot;?&gt;&#92n&quot;</font>);
+    isEmpty = <b>true</b>;
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an XmlWriter from a Writer, using default UTF8 encoding.
+   *
+   * @param out the original Writer
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> XmlWriter(Writer out) <b>throws</b> java.io.IOException {
+    <b>this</b>(out, <font color="#9933CC">&quot;UTF8&quot;</font>);
+  }
+
+
+    <font color="#003399"><i>/**
+     * Creates an XmlWriter from an OutputStreamWriter, using its encoding.
+     *
+     * @param out the original OutputStreamWriter
+     * @throws java.io.IOException
+     */</i></font>
+  <b>public</b> XmlWriter(OutputStreamWriter out) <b>throws</b> java.io.IOException {
+    <b>this</b>(out, out.getEncoding());
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an XmlWriter from an OutputStream, using apwxidiws encoding.
+   *
+   * @param out the OutputStream to use
+   * @param encoding encoding to use
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> XmlWriter(OutputStream out, String encoding)
+    <b>throws</b> java.io.UnsupportedEncodingException, java.io.IOException {
+    <b>this</b>(<b>new</b> OutputStreamWriter(out, encoding));
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an XmlWriter from an OutputStream, using default UTF8 encoding.
+   *
+   * @param out the OutputStream to use
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> XmlWriter(OutputStream out)
+    <b>throws</b> java.io.UnsupportedEncodingException, java.io.IOException {
+    <b>this</b>(out, <font color="#9933CC">&quot;UTF8&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * escapeChars - characters that ought to be escaped in output Xml file
+   */</i></font>
+  <b>static</b> <b>public</b> <b>final</b> String escapedChars = <font color="#9933CC">&quot;&lt;&gt;&#92'&#92&quot;</font>&amp;]<font color="#9933CC">&quot;;</font>
+
+  <font color="#003399"><i>/**
+   * okChars - characters that are okay to be kept intact in output Xml file
+   */</i></font>
+  <b>static</b> <b>public</b> <b>final</b> String okChars      = <font color="#9933CC">&quot;&#92r&#92n&#92t&quot;</font>;
+
+  <b>static</b> <b>protected</b> <b>boolean</b> needsEscape(<b>char</b> c) {
+    <b>return</b> ((c &lt; <font color="#9933CC">'&#92u0020'</font> &amp;&amp; okChars.indexOf(c) &lt; 0) ||
+            escapedChars.indexOf(c) &gt;= 0);
+  }
+
+  <font color="#003399"><i>/**
+   * Converts a string to the form that is acceptable inside Xml files,
+   * escaping special characters.
+   *
+   * @param s the string to convert
+   * @return string with certain characters replaiced with their SGML entity representations
+   */</i></font>
+  <b>static</b> <b>public</b> String xmlEscape(String s)
+  {
+    <b>if</b> (isAlmostEmpty(s)) <b>return</b> <font color="#9933CC">&quot;&quot;</font>;
+
+    <b>boolean</b> bNeedEscape = <b>false</b>;
+
+    <b>for</b> (<b>int</b> i = 0; i &lt; s.length() &amp;&amp; !bNeedEscape; i++) {
+      bNeedEscape = needsEscape(s.charAt(i));
+    }
+
+    <b>if</b> (!bNeedEscape) <b>return</b> s;
+
+    StringBuffer result = <b>new</b> StringBuffer(s.length() * 6 / 5);
+
+    <b>for</b> (<b>int</b> i = 0; i &lt; s.length(); i++) {
+      <b>char</b> c = s.charAt(i);
+      String esc = sgmlEntity(c);
+      <b>if</b> (esc == <b>null</b>) result.append(c);
+      <b>else</b>             result.append(esc);
+    }
+
+    <b>return</b> result.toString();
+  }
+
+  <font color="#003399"><i>/**
+   * Writes characters to output stream.
+   *
+   * @param cc char array to output
+   * @param off offset inside the arrray
+   * @param len number of characters to write
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> <b>void</b> write(<b>char</b>[]cc, <b>int</b> off, <b>int</b> len)
+    <b>throws</b> java.io.IOException  {
+    writer.write(cc, off, len);
+  }
+
+  <font color="#003399"><i>/**
+   * Writes a string to output.
+   *
+   * @param s the strign to write
+   * @throws java.io.IOException if something went wrong
+   */</i></font>
+  <b>public</b> <b>void</b> write(String s) <b>throws</b> java.io.IOException
+  {
+    writer.write(s);
+    <b>if</b> (isEmpty &amp;&amp; !isEmpty(s)) {
+      isEmpty = <b>false</b>;
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Flushes the output.
+   *
+   * @throws java.io.IOException if something went wrong
+   */</i></font>
+  <b>public</b> <b>void</b> flush() <b>throws</b> java.io.IOException
+  { writer.flush(); }
+
+  <b>protected</b> <b>void</b> eol() <b>throws</b> java.io.IOException {
+    write(<font color="#9933CC">'&#92n'</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * Writes an attribute name-value pair to the output.
+   *
+   * @param name attribute name
+   * @param value attribute value
+   * @throws java.io.IOException if something went wrong
+   */</i></font>
+  <b>public</b> <b>void</b> writeAttribute(String name, String value) <b>throws</b> java.io.IOException
+  {
+    write(attributeToString(name, value));
+  }
+
+  <font color="#003399"><i>/**
+   * Converts a name-value pair to a string of form name=&quot;value&quot;.
+   *
+   * @param name the name of the attribute
+   * @param value the value of the attribute
+   * @return a string of form &amp;lt;&lt;i&gt;name&lt;/i&gt;&amp;gt;=&quot;&amp;lt;&lt;i&gt;value&lt;/i&gt;&amp;gt;&quot;. If value
+   * is null or an empty string, result is an empty string.
+   */</i></font>
+  <b>public</b> String attributeToString(String name, String value) {
+    <b>return</b> isEmpty(value) ? <font color="#9933CC">&quot;&quot;</font> :
+           (<font color="#9933CC">&quot; &quot;</font> + name + <font color="#9933CC">&quot;=&#92&quot;</font><font color="#9933CC">&quot; + xmlEscape(value) + &quot;</font>&#92<font color="#9933CC">&quot;&quot;</font>);
+
+  }
+
+  <font color="#003399"><i>/**
+   * Writes attributes, name-value pairs, to the output.
+   *
+   * @param attrs String array of name-value pairs
+   * @throws java.io.IOException if somethings went wrong
+   */</i></font>
+  <b>public</b> <b>void</b> writeAttributes(String[]attrs) <b>throws</b> java.io.IOException
+  {
+    <b>if</b> (attrs != <b>null</b>) {
+      <b>for</b> (<b>int</b> i = 0; i &lt; attrs.length; i += 2) {
+        writeAttribute(attrs[i], attrs[i+1]);
+      }
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Write attributes, name-value pairs, to the output.
+   *
+   * @param attrs maps attribute names to values
+   * @throws java.io.IOException if somethings went wrong
+   */</i></font>
+  <b>public</b> <b>void</b> writeAttributes(Map attrs) <b>throws</b> java.io.IOException
+  {
+    <b>if</b> (attrs != <b>null</b>) {
+      Iterator keys = attrs.keySet().iterator();
+      <b>while</b> (keys.hasNext()) {
+        String key = (String)keys.next();
+        writeAttribute(key, (String)attrs.get(key));
+      }
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Return the number of attrubutes in the attribute list which can be a string.
+   * array or a map.
+   *
+   * @param attrs a string array or a map of attributes
+   * @return the number of attributes (size of array / 2, number of keys in a map,
+   * 0 otherwise).
+   */</i></font>
+  <b>public</b> <b>int</b> attrSize(Object attrs) {
+    <b>return</b> (attrs == <b>null</b>) ? 0 :
+           (attrs <b>instanceof</b> String[]) ? ((String[])attrs).length :
+           (attrs <b>instanceof</b> Map)  ? ((Map)attrs).size() :
+           0;
+  }
+
+  <font color="#003399"><i>/**
+   * Gets a value of an attribute from an attribute list hat can be a map or a name-value pair string array.
+   *
+   * @param attrs attribute list
+   * @param name the name of the attribute
+   * @return the value of the attribute, or null if not found
+   */</i></font>
+  <b>public</b> String getAttribute(Object attrs, String name) {
+    <b>if</b> (attrs == <b>null</b>) {
+     <b>return</b> <b>null</b>;
+    } <b>else</b> <b>if</b> (attrs <b>instanceof</b> String[]) {
+      String[] array = (String[])attrs;
+      <b>for</b> (<b>int</b> i = 0; i &lt; array.length; i+=2) {
+        <b>if</b> (array[i].equals(name)) {
+          <b>return</b> array[i+1];
+        }
+      }
+    } <b>else</b> <b>if</b> (attrs <b>instanceof</b> Map) {
+      <b>return</b> (String)((Map)attrs).get(name);
+    }
+
+    <b>return</b> <b>null</b>;
+  }
+
+  <font color="#003399"><i>/**
+   * Write attributes, name-value pairs, to the output.
+   *
+   * @param attrs it is either a name-value pair string array, or a map that maps attribute names to values
+   * @throws java.io.IOException if somethings went wrong
+   */</i></font>
+  <b>public</b> <b>void</b> writeAttributes(Object attrs) <b>throws</b> java.io.IOException
+  {
+    <b>if</b> (attrs == <b>null</b>) <b>return</b>;
+
+    <b>if</b> (attrs <b>instanceof</b> String[]) {
+      writeAttributes((String[])attrs);
+    } <b>else</b> <b>if</b> (attrs <b>instanceof</b> HashMap) {
+      writeAttributes((HashMap)attrs);
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Converts a list of attibutes to a string.
+   *
+   * @param attrs a name-value pair string array
+   * @return its representaion as string, by the rules of Xml.
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> String attributesToString(String[]attrs) <b>throws</b> java.io.IOException
+  {
+    String buf = <font color="#9933CC">&quot;&quot;</font>;
+    <b>if</b> (attrs != <b>null</b>) {
+      <b>for</b> (<b>int</b> i = 0; i &lt; attrs.length; i += 2) {
+        buf += attributeToString(attrs[i], attrs[i+1]);
+      }
+    }
+    <b>return</b> buf;
+  }
+
+  <font color="#003399"><i>/**
+   * Starts outputting an element of Xml.
+   * &lt;p&gt; as a result of this, &quot;&amp;lt;&quot;&lt;i&gt;type&lt;/i&gt; followed by attributes
+   * followed by &quot;&amp;gt;&quot; is sent to the output
+   *
+   * @param type element type
+   * @param attrs attributes (can be a string array or a map)
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> <b>void</b> openElement(String type, Object attrs) <b>throws</b> java.io.IOException
+  {
+    Elements.push(type);
+    write(prefix + <font color="#9933CC">&quot;&lt;&quot;</font> + type);
+    <b>if</b> (attrs != <b>null</b>) writeAttributes(attrs);
+    write(<font color="#9933CC">&quot;&gt;&quot;</font>);
+    prefix += <font color="#9933CC">&quot;  &quot;</font>;
+  }
+
+<font color="#003399"><i>/**
+ * Closes an element in output.
+ *
+ * If the last element has a type &lt;i&gt;t&lt;/i&gt;, the characters &quot;&amp;lt;/&lt;i&gt;t&lt;/i&gt;&amp;gt;&quot;
+ * are sent to the output
+ *
+ * @throws java.io.IOException
+ */</i></font>
+  <b>public</b> <b>void</b> closeElement() <b>throws</b> java.io.IOException
+  {
+    <b>try</b> {
+      prefix = prefix.substring(0, Math.max(0,prefix.length() - 2));
+      write(prefix + <font color="#9933CC">&quot;&lt;/&quot;</font> + Elements.pop() + <font color="#9933CC">&quot;&gt;&quot;</font>);
+    } <b>catch</b> (Exception e) {};
+  }
+
+  <font color="#003399"><i>/**
+   * Closes the output of Xml, dumping end tags of all elements stored in the stack.
+   *
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> <b>void</b> close() <b>throws</b> java.io.IOException
+  {
+    <b>while</b> (!Elements.empty()) {
+      closeElement();
+      eol();
+    }
+    writer.close();
+  }
+
+  <font color="#003399"><i>/**
+   * Writes an element that does not have any attributes or kids.
+   *
+   * @param type element type
+   * @param value element value
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> <b>void</b> writeElement(String type, String value) <b>throws</b> java.io.IOException
+  {
+    <b>if</b> (value != <b>null</b> &amp;&amp; value.length() &gt; 0)
+      write(prefix + <font color="#9933CC">&quot;&lt;&quot;</font> + type + <font color="#9933CC">&quot;&gt;&quot;</font> + xmlEscape(value) + <font color="#9933CC">&quot;&lt;/&quot;</font> + type + <font color="#9933CC">&quot;&gt;&quot;</font>);
+  }
+
+  <font color="#003399"><i>/**
+   * Writes an element that does not have any kids.
+   *
+   * @param type element type
+   * @param value element value
+   * @param attrs element attributes
+   * @throws java.io.IOException
+   */</i></font>
+  <b>public</b> <b>void</b> writeElement(String type, String value, Object attrs)
+  <b>throws</b> java.io.IOException
+  {
+    String id = getAttribute(attrs, <font color="#9933CC">&quot;id&quot;</font>);
+    <b>boolean</b> isTopLevel = isEmpty;
+    <b>if</b> (isTopLevel ||
+        attrSize(attrs) &gt; 1 ||
+        (id == <b>null</b> &amp;&amp; attrSize(attrs) == 1)) {
+      write(prefix + <font color="#9933CC">&quot;&lt;&quot;</font> + type);
+      writeAttributes(attrs);
+      write(isAlmostEmpty(value) &amp;&amp; !isTopLevel ? <font color="#9933CC">&quot;/&gt;&#92n&quot;</font> :
+                      <font color="#9933CC">&quot;&gt;&quot;</font> + xmlEscape(value) + <font color="#9933CC">&quot;&lt;/&quot;</font> + type + <font color="#9933CC">&quot;&gt;&quot;</font>);
+    } <b>else</b> <b>if</b> (!isAlmostEmpty(value)) {
+      writeElement(type, value);
+    } <b>else</b> {
+      <font color="#003399"><i>// just ignore this element</i></font>
+    }
+  }
+
+  <b>protected</b> <b>void</b> writeXmlData(XmlData data)
+    <b>throws</b> IOException {
+
+    Map attributes = data.getAttributes();
+    Collection kids = data.getAllKids();
+
+    <b>if</b> ((kids != <b>null</b>) &amp;&amp; (kids.size() &gt; 0)) {
+      openElement(data.getType(), attributes);
+
+      <b>for</b> (Iterator i = kids.iterator(); i.hasNext();) {
+        eol();
+        writeXmlData((XmlData)i.next());
+      }
+      <b>if</b> (!isAlmostEmpty(data.getValue())) {
+        write(xmlEscape(data.getValue()));
+      } <b>else</b> {
+        eol();
+      }
+      closeElement();
+    } <b>else</b> {
+      writeElement(data.getType(), data.getValue(), attributes);
+    }
+  }
+
+<font color="#003399"><i>/*
+  private void writeMap(Map m)
+  throws IOException
+  {
+    String[] a = (String[])m.get(&quot;attr&quot;);
+    String type = (String)m.get(&quot;type&quot;);
+    ArrayList kids = (ArrayList)m.get(&quot;kids&quot;);
+
+    if ((kids != null) &amp;&amp; (kids.size() &gt; 0)) {
+      openElement(type, a);
+
+      for (int i = 0; i &lt; kids.size(); i++) {
+        write(kids.get(i));
+      }
+      closeElement();
+    } else {
+      writeElement(type, (String)m.get(&quot;value&quot;), a);
+    }
+    eol();
+  }
+*/</i></font>
+
+  <font color="#003399"><i>/**
+   * Writes an object as Xml content to the output.
+   *
+   * @param o the data to be sent to output. If it is not XmlData, it is stringified first.
+   * @throws IOException
+   */</i></font>
+  <b>public</b> <b>void</b> write(Object o)
+  <b>throws</b> IOException
+  {
+    <b>if</b>(o <b>instanceof</b> XmlData) {
+      writeXmlData((XmlData)o);
+      eol();
+<font color="#003399"><i>//    } else if(o instanceof Map) {</i></font>
+<font color="#003399"><i>//      writeMap((Map)o);</i></font>
+    } <b>else</b> {
+      write(o.toString());
+    }
+    flush();
+  }
+
+  <font color="#003399"><i>/**
+   * Writes an object as Xml content to the output.
+   *
+   * @param out the stream to output the data to
+   * @param o the data to output
+   * @throws IOException
+   */</i></font>
+  <b>public</b> <b>static</b> <b>void</b> write(OutputStream out, Object o)
+    <b>throws</b> IOException {
+    (<b>new</b> XmlWriter(out)).write(o);
+  }
+
+  <font color="#003399"><i>/**
+   * Write the contents of object as an Xml file
+   *
+   * @param f the file to write to
+   * @param o the object to write
+   * @throws IOException
+   */</i></font>
+  <b>public</b> <b>static</b> <b>void</b> write(File f, Object o)
+    <b>throws</b> IOException {
+    File location = f.getParentFile();
+    <b>if</b> (!location.exists()) {
+      location.mkdirs();
+    }
+    <b>if</b> (!location.exists()) {
+      <b>throw</b> <b>new</b> IOException(<font color="#9933CC">&quot;failed to create directory &quot;</font> + location);
+    }
+    write(<b>new</b> FileOutputStream(f), o);
+  }
+
+  <font color="#003399"><i>/**
+   * Write the contents of object as an Xml file.
+   *
+   * @param filename the name of the file to write to
+   * @param o the object to write
+   * @throws IOException
+   */</i></font>
+  <b>public</b> <b>static</b> <b>void</b> write(String filename, Object o)
+    <b>throws</b> IOException {
+    write(<b>new</b> File(filename), o);
+  }
+
+  <b>protected</b> <b>static</b> <b>final</b> <b>boolean</b> isEmpty(String string) {
+    <b>if</b> (string == <b>null</b>) <b>return</b> <b>true</b>;
+    <b>return</b> string.length() == 0;
+  }
+
+  <b>protected</b> <b>static</b> <b>final</b> <b>boolean</b> isAlmostEmpty(String string) {
+    <b>if</b> (isEmpty(string)) <b>return</b> <b>true</b>;
+
+    <b>for</b> (<b>int</b> i = 0; i &lt; string.length(); i++) {
+      <b>if</b> (string.charAt(i) &gt; <font color="#9933CC">' '</font>) <b>return</b> <b>false</b>;
+    }
+    <b>return</b> <b>true</b>;
+  }
+
+  <font color="#003399"><i>/**
+   * Converts a character to its SGML numeric encoding
+   *
+   * @param c the character
+   * @return a string with the representation of c as
+   * &quot;Numeric Character Reference&quot; in SGMLese
+   *
+   * &lt;br&gt;&lt;br&gt;&lt;b&gt;Example&lt;/b&gt;:
+   * &lt;li&gt;&lt;code&gt;toSgmlEncoding('&#92n')&lt;/code&gt;
+   * returns &quot;&amp;amp;#10;&quot;.&lt;/li&gt;
+   */</i></font>
+  <b>public</b> <b>static</b> String toSgmlEncoding(<b>char</b> c) {
+    <b>return</b> c &gt; 0x20 || c == 0x9 || c == 0xa || c == 0xd ? <font color="#9933CC">&quot;&amp;#&quot;</font> + (<b>int</b>)c + <font color="#9933CC">&quot;;&quot;</font> : <font color="#9933CC">&quot;?&quot;</font>;
+  }
+
+  <font color="#003399"><i>/**
+   * Encodes a character by SGML rules
+   * It can be a hex representation
+   * @param c the character
+   * @return the string with either Predefined Entity, Numeric Character Reference,
+   * or null if no entity could be found
+   *
+   * &lt;br&gt;&lt;br&gt;&lt;b&gt;Examples&lt;/b&gt;:
+   * &lt;li&gt;&lt;code&gt;sgmlEntity('&#92u005c60ab')&lt;/code&gt; returns &quot;&amp;amp;#24747;&quot; (that is, Numeric Character Reference);&lt;/li&gt;
+   * &lt;li&gt;&lt;code&gt;sgmlEntity('&lt;')&lt;/code&gt; returns &quot;&amp;amp;lt;&quot; (that is, Predefined Entity);&lt;/li&gt;
+   * &lt;li&gt;&lt;code&gt;sgmlEntity('&amp;')&lt;/code&gt; returns &quot;&amp;amp;lt;&quot; (that is, Predefined Entity);&lt;/li&gt;
+   * &lt;li&gt;&lt;code&gt;sgmlEntity('X')&lt;/code&gt; returns &lt;b&gt;null&lt;/b&gt;&quot;;&lt;/li&gt;
+   * &lt;li&gt;&lt;code&gt;sgmlEntity('&#92n')&lt;/code&gt; returns &lt;b&gt;null&lt;/b&gt;&quot;.&lt;/li&gt;
+   */</i></font>
+  <b>public</b> <b>static</b> String sgmlEntity(<b>char</b> c) {
+    <b>return</b> (c == <font color="#9933CC">'&lt;'</font>) ? <font color="#9933CC">&quot;&amp;lt;&quot;</font> :
+           (c == <font color="#9933CC">'&gt;'</font>) ? <font color="#9933CC">&quot;&amp;gt;&quot;</font> :
+           (c == <font color="#9933CC">'&#92'</font><font color="#9933CC">') ? &quot;&amp;apos;&quot; :</font>
+           (c == <font color="#9933CC">'&#92&quot;'</font>) ? <font color="#9933CC">&quot;&amp;quot;&quot;</font> :
+           (c == <font color="#9933CC">'&amp;'</font>) ? <font color="#9933CC">&quot;&amp;amp;&quot;</font> :
+           (c == <font color="#9933CC">']'</font>) ? <font color="#9933CC">&quot;&amp;#93;&quot;</font> :
+           (c &lt; <font color="#9933CC">'&#92u0020'</font> &amp;&amp; c != <font color="#9933CC">'&#92n'</font> &amp;&amp; c != <font color="#9933CC">'&#92r'</font> &amp;&amp; c != <font color="#9933CC">'&#92t'</font>) || c &gt; <font color="#9933CC">'&#92u0080'</font> ?
+              toSgmlEncoding(c) :
+           <b>null</b>;
+  }
+}
+</code></pre>

@@ -1,0 +1,16 @@
+[PropertyInfo]
+allKids,Collection,false,false, , ,true,<default>
+attributes,String[],false,false, , ,true,<default>
+attributes,Map,false,false, , ,true,<default>
+attributes,AttributeList,false,false, , ,true,<default>
+byType,Map,false,false, , ,false,<default>
+id,String,false,false, , ,true,<default>
+name,String,false,false, , ,true,<default>
+type,String,false,false, , ,true,<default>
+value,String,false,false, , ,true,<default>
+xmlContent,XmlData,false,false, , ,true,<default>
+[IconNames]
+
+
+
+

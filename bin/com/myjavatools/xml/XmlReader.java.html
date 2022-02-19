@@ -1,0 +1,303 @@
+<pre class="sourcecode"><code>
+<font color="#003399"><i>/**
+ *
+ * &lt;p&gt;Title: MyJavaTools: XML Reader&lt;/p&gt;
+ * &lt;p&gt;Description: Reads XML source into XmlData.&lt;/p&gt;
+ * &lt;p&gt;Copyright: This is public domain;
+ * The right of people to use, distribute, copy or improve the contents of the
+ * following may not be restricted.&lt;/p&gt;
+ *
+ * @author Vlad Patryshev
+ * @see http://www.w3.org/TR/REC-xml#sec-intro
+ */</i></font>
+
+<b>package</b> com.myjavatools.xml;
+
+<b>import</b> java.util.*;
+<b>import</b> java.io.*;
+
+<b>import</b> org.xml.sax.*;
+<b>import</b> org.xml.sax.helpers.ParserFactory.*;
+<font color="#003399"><i>//import com.sun.xml.parser.Resolver; (deprecated anyway)</i></font>
+
+<b>public</b> <b>class</b> XmlReader
+{
+  <b>protected</b> <b>static</b> <b>interface</b> ParserFactory {
+    <b>public</b> Parser getParser();
+  }
+
+  <b>protected</b> <b>static</b> <b>class</b> SAX1ParserFactory <b>implements</b> ParserFactory {
+    <b>public</b> Parser getParser() {
+      <b>try</b> {
+        <b>return</b> org.xml.sax.helpers.ParserFactory.makeParser();
+      }
+      <b>catch</b> (ClassNotFoundException ex) {
+        <b>return</b> <b>null</b>;
+      }<b>catch</b> (IllegalAccessException ex) {
+        <b>return</b> <b>null</b>;
+      }<b>catch</b> (InstantiationException ex) {
+        <b>return</b> <b>null</b>;
+      }<b>catch</b> (NullPointerException ex) {
+        <b>return</b> <b>null</b>;
+      }<b>catch</b> (ClassCastException ex) {
+        <b>return</b> <b>null</b>;
+      }
+    }
+  }
+
+  <b>protected</b> <b>static</b> <b>class</b> SAX2ParserFactory <b>implements</b> ParserFactory {
+    javax.xml.parsers.SAXParserFactory factory = <b>null</b>;
+    <b>public</b> Parser getParser()
+    {
+      <b>try</b> {
+        <b>if</b> (factory == <b>null</b>) {
+          factory = javax.xml.parsers.SAXParserFactory.newInstance();
+        }
+        <b>return</b> factory == <b>null</b> ? <b>null</b> : factory.newSAXParser().getParser();
+      }<b>catch</b> (Exception ex) {
+        <b>return</b> <b>null</b>;
+      }
+    }
+  }
+  <b>protected</b> <b>static</b> ParserFactory[] parserPlant = { <b>new</b> SAX1ParserFactory(),
+                                                   <b>new</b> SAX2ParserFactory() };
+  <b>protected</b> <b>static</b> ParserFactory factory = <b>null</b>;
+
+
+  <b>protected</b> InputSource src    = <b>null</b>;
+  <b>protected</b> <b>static</b> Parser SAX_parser  = <b>null</b>;
+  <b>protected</b> BasicXmlData   curElement  = <b>null</b>;
+  <b>protected</b> BasicXmlData   lastElement = <b>null</b>;
+
+  <b>protected</b> <b>class</b> Handler <b>extends</b> HandlerBase
+  {
+    <b>private</b> Stack branch = <b>new</b> Stack();
+    <b>private</b> StringBuffer curValue = <b>new</b> StringBuffer(160);
+
+    <b>public</b> BasicXmlData parse(String fileName)
+    <b>throws</b> InstantiationException, IOException {
+      <b>try</b> {
+<font color="#003399"><i>/* SAX 1.1, deprecated
+       SAX_parser.parse( Resolver.createInputSource(new File(fileName)));
+*/</i></font>
+       SAX_parser.parse( <b>new</b> InputSource(<b>new</b> FileReader(fileName)));
+      } <b>catch</b>( SAXException e ) {
+        e.printStackTrace();
+        System.out.println(<font color="#9933CC">&quot;Error: &quot;</font> + e );
+      } <b>catch</b>( InternalError e) {
+        e.printStackTrace();
+        System.out.println(<font color="#9933CC">&quot;Error: &quot;</font> + e );
+      }
+      <b>return</b> <b>null</b>;
+    }
+
+    <b>public</b> <b>void</b> characters(<b>char</b> text[], <b>int</b> pos, <b>int</b> len)
+    {
+      curValue.append(text, pos, len);
+    }
+
+    <b>public</b> <b>void</b> startElement(String name, AttributeList attr)
+    {
+<font color="#003399"><i>//System.out.println(&quot;(&quot; + name + &quot; &quot;);</i></font>
+      branch.push(curElement);
+      curValue.delete(0, curValue.length());
+
+      curElement = <b>new</b> BasicXmlData(name, <font color="#9933CC">&quot;&quot;</font>, attr);
+    }
+
+    <b>public</b> <b>void</b> endElement(String name)
+    {
+<font color="#003399"><i>//System.out.println(&quot; &quot; + name + &quot;[&quot; + curValue.toString() + &quot;]&quot;);</i></font>
+      curElement.setValue(curValue.toString());
+      curValue.delete(0, curValue.length());
+      curElement.trim();
+      lastElement = curElement;
+      curElement = (BasicXmlData)branch.pop();
+      <b>if</b> (curElement != <b>null</b>) {
+        curElement.addKid(lastElement);
+      }
+<font color="#003399"><i>//System.out.println(&quot;) &quot;);</i></font>
+    }
+  }
+  <b>protected</b> Handler handler;
+
+  XmlReader() <b>throws</b> InstantiationException {
+    <b>try</b> {
+      <b>if</b> (factory == <b>null</b>) {
+        <b>for</b> (<b>int</b> i = 0; i &lt; parserPlant.length; i++) {
+          ParserFactory candidate = parserPlant[i];
+          SAX_parser = candidate.getParser();
+          <b>if</b> (SAX_parser != <b>null</b>) {
+            factory = candidate;
+            <b>break</b>;
+          }
+        }
+      } <b>else</b> {
+        SAX_parser = factory.getParser();
+      }
+    } <b>catch</b> (Exception e) {
+      System.err.println(e);
+      e.printStackTrace(System.err);
+      <b>throw</b> <b>new</b> InstantiationException(<font color="#9933CC">&quot;XmlReader: failed to create SAX parser.&quot;</font>);
+    }
+    <b>try</b> {
+      handler = <b>new</b> Handler();
+    } <b>catch</b> (Exception e) {
+      System.err.println(e);
+      e.printStackTrace(System.err);
+      <b>throw</b> <b>new</b> InstantiationException(<font color="#9933CC">&quot;XmlReader: failed to create SAX handler.&quot;</font>);
+    }
+    <b>try</b> {
+      SAX_parser.setDocumentHandler(handler);
+    } <b>catch</b> (Exception e) {
+      System.err.println(e);
+      e.printStackTrace(System.err);
+      <b>throw</b> <b>new</b> InstantiationException(<font color="#9933CC">&quot;XmlReader: failed to set SAX document handler.&quot;</font>);
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an XmlReader from a Reader
+   *
+   * @param in the reader to read data from
+   *
+   * @throws java.io.IOException
+   * @throws InstantiationException
+   */</i></font>
+  <b>public</b> XmlReader(Reader in)
+    <b>throws</b> java.io.IOException, InstantiationException {
+    <b>this</b>();
+
+    src = <b>new</b> InputSource(in);
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an XmlReader from an input stream. Encoding defaults to UTF-8.
+   *
+   * @param in the stream to read data from
+   * @throws java.io.UnsupportedEncodingException
+   * @throws java.io.IOException
+   * @throws InstantiationException
+   */</i></font>
+  <b>public</b> XmlReader(InputStream in)
+    <b>throws</b> java.io.UnsupportedEncodingException,
+           java.io.IOException,
+           InstantiationException {
+    <b>this</b>(<b>new</b> InputStreamReader(in, <font color="#9933CC">&quot;UTF8&quot;</font>));
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an XmlReader to read from a file. Encoding defaults to UTF-8.
+   *
+   * @param file the file to read data from
+   * @throws java.io.UnsupportedEncodingException
+   * @throws java.io.IOException
+   * @throws InstantiationException
+   */</i></font>
+  <b>public</b> XmlReader(File file)
+    <b>throws</b> java.io.UnsupportedEncodingException,
+           java.io.IOException,
+           InstantiationException {
+    <b>this</b>(<b>new</b> FileInputStream(file));
+  }
+
+  <font color="#003399"><i>/**
+   * Creates an XmlReader to read from a file. Encoding defaults to UTF-8.
+   *
+   * @param filename the name of the file to read data from
+   * @throws java.io.UnsupportedEncodingException
+   * @throws java.io.IOException
+   * @throws InstantiationException
+   */</i></font>
+  <b>public</b> XmlReader(String filename)
+    <b>throws</b> java.io.UnsupportedEncodingException,
+           java.io.IOException,
+           InstantiationException {
+    <b>this</b>(<b>new</b> FileInputStream(filename));
+  }
+
+  <font color="#003399"><i>/**
+   * Tells whether input is ready to be read.
+   *
+   * @return true if the next read() is guaranteed not to block for input, false otherwise. Note that returning false does not guarantee that the next read will block.
+   * @throws java.io.IOException if an I/O error occurs.
+   */</i></font>
+  <b>public</b> <b>boolean</b> ready() <b>throws</b> java.io.IOException {
+    <b>return</b> src.getCharacterStream().ready();
+  }
+
+  <font color="#003399"><i>/**
+   * Reads the whole XML contents into XmlData
+   *
+   * @return XmlData obtained from input source.
+   * @throws java.io.IOException if an I/O error occurs.
+   */</i></font>
+  <b>public</b> BasicXmlData read()
+    <b>throws</b> IOException {
+    <b>try</b> {
+      SAX_parser.parse(src);
+      <b>return</b> lastElement;
+    } <b>catch</b>( Exception e) {
+      e.printStackTrace();
+      System.out.println(<font color="#9933CC">&quot;Error: &quot;</font> + e);
+      <b>throw</b> <b>new</b> IOException(e.getMessage());
+    }
+  }
+
+  <font color="#003399"><i>/**
+   * Reads the whole XML contents into XmlData
+   *
+   * @param in the stream to read data from
+   * @return XmlData obtained from input source.
+   * @throws java.io.IOException if an I/O error occurs.
+   * @throws java.lang.InstantiationException if there are problems instantiating XmlData
+   */</i></font>
+  <b>public</b> <b>static</b> BasicXmlData read(InputStream in)
+    <b>throws</b> java.io.IOException,
+           java.lang.InstantiationException {
+    <b>return</b> (<b>new</b> XmlReader(in)).read();
+  }
+
+  <font color="#003399"><i>/**
+   * Reads the whole XML contents into XmlData
+   *
+   * @param in the file to read data from
+   * @return XmlData obtained from input source.
+   * @throws java.io.IOException if an I/O error occurs.
+   * @throws java.lang.InstantiationException if there are problems instantiating XmlData
+   */</i></font>
+  <b>public</b> <b>static</b> BasicXmlData read(File in)
+    <b>throws</b> java.io.IOException,
+           java.lang.InstantiationException {
+    <b>return</b> (<b>new</b> XmlReader(in)).read();
+  }
+
+  <font color="#003399"><i>/**
+   * Reads the whole XML contents into XmlData
+   *
+   * @param in the reader to read data from
+   * @return XmlData obtained from input source.
+   * @throws java.io.IOException if an I/O error occurs.
+   * @throws java.lang.InstantiationException if there are problems instantiating XmlData
+   */</i></font>
+  <b>public</b> <b>static</b> BasicXmlData read(Reader in)
+    <b>throws</b> java.io.IOException,
+           java.lang.InstantiationException {
+    <b>return</b> (<b>new</b> XmlReader(in)).read();
+  }
+
+  <font color="#003399"><i>/**
+   * Reads the whole XML contents into XmlData
+   *
+   * @param s the string containing the XmlData as text
+   * @return XmlData obtained from input source.
+   * @throws java.io.IOException if an I/O error occurs.
+   * @throws java.lang.InstantiationException if there are problems instantiating XmlData
+   */</i></font>
+  <b>public</b> <b>static</b> BasicXmlData readFromString(String s)
+    <b>throws</b> java.io.IOException,
+           java.lang.InstantiationException {
+    <b>return</b> read(<b>new</b> StringReader(s));
+  }
+}
+</code></pre>

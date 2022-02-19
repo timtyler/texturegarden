@@ -1,0 +1,14 @@
+Setup 
+SetSeed 10 
+Process2D Or Random 33489919 Or Square 65534 Y 2 ShiftLeft Square 65535 X 3 16 
+DoAnimation 255 
+Animate 
+ReactionDiffusion1 Buffer0 850 20002 221 57 16 13 
+Return 
+Palette 
+MakeColourMapRGB Bell 65536 X 2 Bell 65534 X 1 Sawtooth 65535 Add X 16384 2 
+Return 
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation Sawtooth 65534 C 2 

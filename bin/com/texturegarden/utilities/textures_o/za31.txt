@@ -1,0 +1,20 @@
+Setup 
+SetSeed 12 
+Clear2D 
+BandwidthLimitedFrequencyNoise2D 65501 1 2 
+InverseFFT2D 
+Equalise2D 
+Process2DQuick Sin 65534 C 1 
+NewBuffer2D BufferWidth BufferHeight 
+Animate 
+RiseUpBuffer2D Buffer1 Speed 
+MergeNBuffersShifted2D 4 Buffer1 AddCyclic Time 12356 17113 Buffer1 23222 AddCyclic Time 26833 Buffer1 SubtractCyclic 54784 Time 31333 1 47444 SubtractCyclic 23566 Time CombinationAdd 
+Process2DQuick Bound C 
+Return 
+Palette 
+MakeColourMapHSB Invert Sin 10000 X 1  Invert Sin 65535 X 4 Bell 65536 X 1 
+Return 
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation Sin 65534 C -1 

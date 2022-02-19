@@ -1,0 +1,18 @@
+Setup
+SetSeed 5
+Process2D Or Random 0x01FF03FF Or Square 65535 Y 5 ShiftLeft Square 65535 X 6 16
+DoAnimation 122
+
+Animate
+ReactionDiffusion1 Buffer0 1140 18310 217 83 14 12
+Return
+
+Palette
+MakeColourMapHSB Invert Sawtooth 20000 X 1 X Invert X
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation C

@@ -1,0 +1,18 @@
+Setup
+SetSeed 5
+Process2D Or Random 0x01FF03FF Or Square 65535 Y 5 ShiftLeft Square 65535 X 6 16
+DoAnimation 360
+
+Animate
+ReactionDiffusion1 Buffer0 1500 9289 202 47 14 14
+Return
+
+Palette
+MakeColourMapRGB X Subtract 32000 X 65535
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation C

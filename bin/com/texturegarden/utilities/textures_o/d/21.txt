@@ -1,0 +1,34 @@
+Setup
+NewBuffer1D BufferHeight
+NewBuffer1D BufferWidth
+
+Animate 
+SetSeed 22
+Clear2D
+FrequencyFractalNoise2D 65536 0
+InverseFFT2D 
+Equalise2D 
+Process2D AddCyclic AddCyclic AddCyclic C Bell 65535 Y 1 Sin 65535 X 1 Time
+
+WavesV Sin 6666 AddCyclic X Time 2 
+SwapBuffer1D Buffer1
+WavesH Sin 6666 AddCyclic Y Time 2 
+SwapBuffer1D Buffer1
+WavesV Bell 9999 AddCyclic X Time 1 
+SwapBuffer1D Buffer1
+WavesH Bell 9999 AddCyclic Y Time 1 
+SwapBuffer1D Buffer1
+Return
+
+Blur2D
+Angular2D
+
+Palette
+MakeColourMapHSB Bell 65535 X 1 55555 Invert Bell 20000 X 1
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation Sin 65535 C 1

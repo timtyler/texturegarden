@@ -1,0 +1,18 @@
+Setup
+SetSeed 5
+Process2D Or Random 0x07FF07FF AddCyclic Sin 65535 X 2 Sin 65535 Y 2
+DoAnimation 62
+
+Animate
+ReactionDiffusion1 Buffer0 1500 12700 0 256 12 12
+Return
+
+Palette
+MakeColourMapRGB Invert X Invert Subtract 32000 X 65535
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation C

@@ -1,0 +1,18 @@
+Setup 
+SetSeed 22 
+Process2D X
+Return 
+
+Animate 
+SetSeed 22 
+Return 
+
+BandwidthLimitedFrequencyNoise2D 60000 1 4 
+Process2D AddCyclic SubtractCyclic C X Y 
+Palette 
+MakeColourMapRGB Bell 65535 X 1 Sawtooth 65535 X 1 Sin 44444 X 1 
+Return 
+GetColour 
+ReturnColour C 
+GetElevation 
+ReturnElevation Sin 65535 C 1 

@@ -1,0 +1,18 @@
+Setup 
+SetSeed 10 
+Clear2D 
+FrequencyFractalNoise2D 65535 0 
+InverseFFT2D 
+Equalise2D 
+NewBuffer2D BufferWidth BufferHeight 
+Animate 
+MergeNBuffersShifted2D 4 Buffer1 AddCyclic 24683 Time 11110 Buffer1 22223 Time Buffer1 SubtractCyclic 42002 Time 33332 Buffer1 44444 SubtractCyclic 41003 Time CombinationMultiply 
+Equalise2D 
+Return 
+GetColour 
+ReturnColour C 
+Palette 
+MakeColourMapRGB Invert Sin 65535 X 2 Invert Sin 65535 X 2 Invert Sawtooth1 65535 X 1 
+Return 
+GetElevation 
+ReturnElevation Sin 65535 C 3 

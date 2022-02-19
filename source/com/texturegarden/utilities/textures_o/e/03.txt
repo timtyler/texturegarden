@@ -1,0 +1,23 @@
+Setup
+SetSeed 22
+DiffusionLimitedAggregationSetup1 27 60
+DoAnimation 330
+Return
+
+Animate 
+DiffusionLimitedAggregation1 64 255
+Return
+
+Palette
+MakeColourMapRGB Sawtooth 65535 X 1 Sawtooth 65535 X 1 Sawtooth 65535 X 1 
+Return
+
+GetColour
+ReturnColour C
+
+GetElevation 
+ReturnElevation Sin 65535 C 2
+
+Return
+RawMultiply Add BufferWidth BufferHeight 2
+ 
